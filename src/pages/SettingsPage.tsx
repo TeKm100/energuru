@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { AuthPage } from '../types';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import { supabase, isSupabaseConfigured, getAuthRedirectUrl } from '../lib/supabase';
 import { 
   Settings, 
   ShieldCheck, 
@@ -50,7 +50,7 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
     setIsResetting(true);
 
     try {
-      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}` : undefined;
+      const redirectUrl = getAuthRedirectUrl();
       const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
         redirectTo: redirectUrl,
       });
@@ -64,7 +64,11 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
       );
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to request password reset.';
-      setResetError(msg);
+      if (msg.toLowerCase().includes('rate limit') || msg.toLowerCase().includes('seconds')) {
+        setResetError('Supabase security limit: Too many password reset attempts. Please wait 60 seconds before trying again.');
+      } else {
+        setResetError(msg);
+      }
     } finally {
       setIsResetting(false);
     }

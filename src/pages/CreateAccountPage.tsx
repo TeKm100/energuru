@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Page } from '../types';
 import { Logo } from '../components/Logo';
 import { supabase, isSupabaseConfigured, supabaseUrl, getAuthRedirectUrl } from '../lib/supabase';
@@ -10,7 +10,8 @@ import {
   EyeOff, 
   Check, 
   X, 
-  Lock 
+  Lock,
+  Mail 
 } from 'lucide-react';
 
 interface CreateAccountPageProps {
@@ -37,6 +38,18 @@ export const CreateAccountPage: React.FC<CreateAccountPageProps> = ({ onNavigate
     email: string;
   } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCountdown, setResendCountdown] = useState(0);
+  const [resendNotice, setResendNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  // Countdown timer for resending verification email (prevents Supabase rate-limit errors)
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCountdown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCountdown]);
 
   // Live Password Strength & Requirements Analysis
   const passwordAnalysis = useMemo(() => {
@@ -163,6 +176,10 @@ export const CreateAccountPage: React.FC<CreateAccountPageProps> = ({ onNavigate
         if (errorMsg.includes('already registered') || errorMsg.includes('user already exists') || errorMsg.includes('already in use')) {
           setIsExistingUser(true);
           setServerError('An account with this email address already exists.');
+        } else if (errorMsg.includes('rate limit') || errorMsg.includes('over_email_send_rate_limit') || errorMsg.includes('seconds')) {
+          setServerError(
+            'Supabase security rate limit: Too many signup attempts have been made in a short period. Please wait 60 seconds before trying again.'
+          );
         } else if (errorMsg.includes('failed to fetch') || errorMsg.includes('network') || errorMsg.includes('fetch')) {
           setServerError(
             `Connection failed: Unable to reach the Supabase authentication server (${supabaseUrl || 'configured endpoint'}). Please verify your internet connection.`
@@ -186,6 +203,7 @@ export const CreateAccountPage: React.FC<CreateAccountPageProps> = ({ onNavigate
           needsEmailConfirmation: true,
           email: formData.email.trim(),
         });
+        setResendCountdown(60);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'An unexpected error occurred during account registration.';
@@ -198,6 +216,47 @@ export const CreateAccountPage: React.FC<CreateAccountPageProps> = ({ onNavigate
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!successInfo?.email || isResending || resendCountdown > 0) return;
+    setIsResending(true);
+    setResendNotice(null);
+
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: successInfo.email,
+        options: {
+          emailRedirectTo: getAuthRedirectUrl(),
+        },
+      });
+
+      if (error) {
+        const errorMsg = error.message.toLowerCase();
+        if (errorMsg.includes('rate limit') || errorMsg.includes('seconds') || errorMsg.includes('over_email_send_rate_limit')) {
+          setResendNotice({
+            type: 'error',
+            text: 'Supabase security rate limit: You can only request this once every 60 seconds. Please wait before retrying.',
+          });
+        } else {
+          setResendNotice({ type: 'error', text: error.message });
+        }
+      } else {
+        setResendNotice({
+          type: 'success',
+          text: 'Verification email re-sent! Please check your inbox and spam folder.',
+        });
+        setResendCountdown(60);
+      }
+    } catch (err: unknown) {
+      setResendNotice({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to resend verification email.',
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -235,270 +294,325 @@ export const CreateAccountPage: React.FC<CreateAccountPageProps> = ({ onNavigate
           </div>
         )}
 
-        {/* Success message banner */}
-        {successInfo && (
-          <div className="p-4 bg-[#071629] border border-emerald-800/60 rounded-lg space-y-3 text-xs text-emerald-200">
-            <div className="flex items-start gap-2.5">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5 text-emerald-400" />
-              <div className="space-y-1.5 flex-1">
-                <h4 className="font-bold text-white text-sm">Registration Successful</h4>
-                <p className="leading-relaxed">{successInfo.message}</p>
-                {successInfo.needsEmailConfirmation && (
-                  <p className="text-slate-300 text-[11px] bg-[#0B1B33] p-2.5 rounded border border-[#16365B]">
-                    Please check the inbox (and spam/junk folder) for <strong className="text-white">{successInfo.email}</strong> to activate your account, then return to sign in.
-                  </p>
-                )}
+        {/* If account created successfully, show dedicated confirmation screen; otherwise render registration form */}
+        {successInfo ? (
+          <div className="space-y-6">
+            <div className="p-6 bg-[#071629] border border-emerald-800/70 rounded-xl text-center space-y-4 shadow-inner">
+              <div className="w-14 h-14 rounded-full bg-emerald-950/80 border border-emerald-500/50 flex items-center justify-center mx-auto text-emerald-400 shadow-md">
+                <Mail className="w-7 h-7" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-bold text-white">Check Your Email</h3>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  We've sent an activation link to verify your EnerGuru account:
+                </p>
+                <div className="py-2 px-3.5 bg-[#0B1B33] rounded-lg border border-[#16365B] inline-block max-w-full">
+                  <span className="text-sm font-semibold text-[#B9E5FF] break-all">{successInfo.email}</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 bg-[#0B1B33] rounded-lg border border-[#16365B] text-left text-xs space-y-2 text-slate-300">
+                <p className="font-semibold text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Next Steps:</span>
+                </p>
+                <ol className="list-decimal pl-5 space-y-1.5 text-slate-300 text-[11px]">
+                  <li>Open the verification email sent from <strong>EnerGuru</strong>.</li>
+                  <li>Click the confirmation link to activate your account.</li>
+                  <li>You will be redirected to the sign-in page to access your dashboard.</li>
+                </ol>
+                <p className="text-[11px] text-amber-300/90 pt-1.5 border-t border-[#16365B]">
+                  <strong>Spam Folder Notice:</strong> If you don't see the email within 1-2 minutes, please check your <em>Spam</em> or <em>Junk</em> folder.
+                </p>
+              </div>
+
+              {/* Resend status or error */}
+              {resendNotice && (
+                <div className={`p-3 rounded text-xs text-left ${
+                  resendNotice.type === 'success' 
+                    ? 'bg-emerald-950/80 border border-emerald-700 text-emerald-200' 
+                    : 'bg-rose-950/80 border border-rose-700 text-rose-200'
+                }`}>
+                  {resendNotice.text}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="pt-2 space-y-3">
+                <button
+                  type="button"
+                  onClick={() => onNavigate('signin')}
+                  className="w-full py-2.5 px-4 rounded bg-[#B9E5FF] text-[#071629] font-bold text-sm hover:bg-white transition-colors cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                >
+                  <span>Proceed to Sign In</span>
+                </button>
+
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 text-xs">
+                  <button
+                    type="button"
+                    onClick={handleResendVerification}
+                    disabled={isResending || resendCountdown > 0}
+                    className="text-[#B9E5FF] hover:underline disabled:opacity-50 disabled:no-underline cursor-pointer"
+                  >
+                    {isResending ? 'Resending...' : resendCountdown > 0 ? `Resend email in ${resendCountdown}s` : 'Resend verification email'}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSuccessInfo(null);
+                      setServerError(null);
+                      setResendNotice(null);
+                    }}
+                    className="text-slate-400 hover:text-white cursor-pointer"
+                  >
+                    Use a different email
+                  </button>
+                </div>
               </div>
             </div>
-            <div className="pt-2 border-t border-emerald-900/50 flex justify-end">
+          </div>
+        ) : (
+          <>
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+              {/* Full Name */}
+              <div>
+                <label htmlFor="account-fullname" className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Full Name <span className="text-[#B9E5FF]">*</span>
+                </label>
+                <input
+                  id="account-fullname"
+                  type="text"
+                  value={formData.fullName}
+                  disabled={isLoading}
+                  onChange={(e) => {
+                    setFormData({ ...formData, fullName: e.target.value });
+                    if (serverError) setServerError(null);
+                  }}
+                  placeholder="e.g. Samuel Bennett"
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
+                    errors.fullName ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
+                  }`}
+                />
+                {errors.fullName && <p className="text-xs text-amber-300 mt-1">{errors.fullName}</p>}
+              </div>
+
+              {/* Email */}
+              <div>
+                <label htmlFor="account-email" className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Email Address <span className="text-[#B9E5FF]">*</span>
+                </label>
+                <input
+                  id="account-email"
+                  type="email"
+                  value={formData.email}
+                  disabled={isLoading}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value });
+                    if (serverError) setServerError(null);
+                  }}
+                  placeholder="name@example.com"
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
+                    errors.email ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
+                  }`}
+                />
+                {errors.email && <p className="text-xs text-amber-300 mt-1">{errors.email}</p>}
+              </div>
+
+              {/* Preferred Nickname (Explicitly Optional, Non-Unique) */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label htmlFor="account-nickname" className="block text-xs font-medium text-slate-300">
+                    Preferred Nickname
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-normal">Optional</span>
+                </div>
+                <input
+                  id="account-nickname"
+                  type="text"
+                  value={formData.preferredNickname}
+                  disabled={isLoading}
+                  onChange={(e) => {
+                    setFormData({ ...formData, preferredNickname: e.target.value });
+                    if (serverError) setServerError(null);
+                  }}
+                  placeholder="e.g. Sam"
+                  className="w-full bg-[#071629] border border-[#16365B] rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#B9E5FF] transition-colors disabled:opacity-60"
+                />
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Used for greetings. If left blank, your first name will be used automatically.
+                </p>
+              </div>
+
+              {/* Password with Show/Hide and Strength Meter */}
+              <div>
+                <label htmlFor="account-password" className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Password <span className="text-[#B9E5FF]">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="account-password"
+                    type={showPassword ? 'text' : 'password'}
+                    value={formData.password}
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      setFormData({ ...formData, password: e.target.value });
+                      if (serverError) setServerError(null);
+                    }}
+                    placeholder="Minimum 8 characters"
+                    className={`w-full bg-[#071629] border rounded pl-3.5 pr-10 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
+                      errors.password ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {errors.password && <p className="text-xs text-amber-300 mt-1">{errors.password}</p>}
+
+                {/* Live Password Strength Indicator */}
+                {formData.password.length > 0 && (
+                  <div className="mt-2.5 p-2.5 bg-[#071629] rounded border border-[#16365B] space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Strength:</span>
+                      <span className={`font-semibold ${
+                        passwordAnalysis.strength === 'Weak' ? 'text-rose-400' :
+                        passwordAnalysis.strength === 'Fair' ? 'text-amber-400' :
+                        passwordAnalysis.strength === 'Good' ? 'text-[#B9E5FF]' :
+                        'text-emerald-400'
+                      }`}>
+                        {passwordAnalysis.strength}
+                      </span>
+                    </div>
+
+                    {/* 4-bar progress indicator */}
+                    <div className="grid grid-cols-4 gap-1.5 h-1.5">
+                      <div className={`rounded-full transition-colors ${
+                        passwordAnalysis.score >= 1 ? 
+                          (passwordAnalysis.score === 1 ? 'bg-rose-500' : passwordAnalysis.score === 2 ? 'bg-amber-400' : passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
+                          : 'bg-slate-700'
+                      }`} />
+                      <div className={`rounded-full transition-colors ${
+                        passwordAnalysis.score >= 2 ? 
+                          (passwordAnalysis.score === 2 ? 'bg-amber-400' : passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
+                          : 'bg-slate-700'
+                      }`} />
+                      <div className={`rounded-full transition-colors ${
+                        passwordAnalysis.score >= 3 ? 
+                          (passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
+                          : 'bg-slate-700'
+                      }`} />
+                      <div className={`rounded-full transition-colors ${
+                        passwordAnalysis.score >= 4 ? 'bg-emerald-400' : 'bg-slate-700'
+                      }`} />
+                    </div>
+
+                    {/* Requirements Checklist */}
+                    <div className="grid grid-cols-2 gap-1 pt-1 text-[11px]">
+                      <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasMinLength ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {passwordAnalysis.hasMinLength ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
+                        <span>At least 8 characters</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasLower && passwordAnalysis.hasUpper ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {passwordAnalysis.hasLower && passwordAnalysis.hasUpper ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
+                        <span>Upper & lower case</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasNumber ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {passwordAnalysis.hasNumber ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
+                        <span>At least one number</span>
+                      </div>
+                      <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasSpecial ? 'text-emerald-300' : 'text-slate-400'}`}>
+                        {passwordAnalysis.hasSpecial ? <Check className="w-3 h-3 text-emerald-400" /> : <span className="w-3 text-center text-slate-500">•</span>}
+                        <span>Symbol (optional)</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Confirm Password with Show/Hide and Live Match Feedback */}
+              <div>
+                <label htmlFor="account-confirm-password" className="block text-xs font-medium text-slate-300 mb-1.5">
+                  Confirm Password <span className="text-[#B9E5FF]">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    id="account-confirm-password"
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={formData.confirmPassword}
+                    disabled={isLoading}
+                    onChange={(e) => {
+                      setFormData({ ...formData, confirmPassword: e.target.value });
+                      if (serverError) setServerError(null);
+                    }}
+                    placeholder="Repeat password"
+                    className={`w-full bg-[#071629] border rounded pl-3.5 pr-10 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
+                      errors.confirmPassword ? 'border-amber-400' : 
+                      confirmMatch === true ? 'border-emerald-500 focus:border-emerald-400' :
+                      confirmMatch === false ? 'border-amber-400 focus:border-amber-400' :
+                      'border-[#16365B] focus:border-[#B9E5FF]'
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+                    aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+
+                {/* Live Match Notification */}
+                {formData.confirmPassword.length > 0 && (
+                  <div className="mt-1.5 text-xs flex items-center gap-1.5">
+                    {confirmMatch ? (
+                      <span className="text-emerald-400 flex items-center gap-1 font-medium">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Passwords match</span>
+                      </span>
+                    ) : (
+                      <span className="text-amber-300 flex items-center gap-1 font-medium">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>Passwords don't match</span>
+                      </span>
+                    )}
+                  </div>
+                )}
+                {errors.confirmPassword && !formData.confirmPassword && (
+                  <p className="text-xs text-amber-300 mt-1">{errors.confirmPassword}</p>
+                )}
+              </div>
+
+              {/* Create Account Button */}
+              <button
+                type="submit"
+                disabled={isLoading || (formData.confirmPassword.length > 0 && confirmMatch === false)}
+                className="w-full py-2.5 px-4 rounded bg-[#B9E5FF] text-[#071629] font-semibold text-sm hover:bg-white transition-colors cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
+              >
+                {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                <span>{isLoading ? 'Creating Account...' : 'Create Account'}</span>
+              </button>
+            </form>
+
+            {/* Already registered? Sign in */}
+            <div className="pt-2 text-center text-xs text-slate-400 border-t border-[#16365B]">
+              <span>Already registered? </span>
               <button
                 type="button"
                 onClick={() => onNavigate('signin')}
-                className="px-4 py-1.5 bg-[#B9E5FF] text-[#071629] font-semibold rounded text-xs hover:bg-white transition-colors"
+                className="text-[#B9E5FF] font-medium hover:underline cursor-pointer"
               >
-                Proceed to Sign In
+                Sign in.
               </button>
             </div>
-          </div>
+          </>
         )}
-
-        <form onSubmit={handleSubmit} className="space-y-4" noValidate>
-          {/* Full Name */}
-          <div>
-            <label htmlFor="account-fullname" className="block text-xs font-medium text-slate-300 mb-1.5">
-              Full Name <span className="text-[#B9E5FF]">*</span>
-            </label>
-            <input
-              id="account-fullname"
-              type="text"
-              value={formData.fullName}
-              disabled={isLoading}
-              onChange={(e) => {
-                setFormData({ ...formData, fullName: e.target.value });
-                if (serverError) setServerError(null);
-              }}
-              placeholder="e.g. Samuel Bennett"
-              className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
-                errors.fullName ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
-              }`}
-            />
-            {errors.fullName && <p className="text-xs text-amber-300 mt-1">{errors.fullName}</p>}
-          </div>
-
-          {/* Email */}
-          <div>
-            <label htmlFor="account-email" className="block text-xs font-medium text-slate-300 mb-1.5">
-              Email Address <span className="text-[#B9E5FF]">*</span>
-            </label>
-            <input
-              id="account-email"
-              type="email"
-              value={formData.email}
-              disabled={isLoading}
-              onChange={(e) => {
-                setFormData({ ...formData, email: e.target.value });
-                if (serverError) setServerError(null);
-              }}
-              placeholder="name@example.com"
-              className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
-                errors.email ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
-              }`}
-            />
-            {errors.email && <p className="text-xs text-amber-300 mt-1">{errors.email}</p>}
-          </div>
-
-          {/* Preferred Nickname (Explicitly Optional, Non-Unique) */}
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="account-nickname" className="block text-xs font-medium text-slate-300">
-                Preferred Nickname
-              </label>
-              <span className="text-[11px] text-slate-400 font-normal">Optional</span>
-            </div>
-            <input
-              id="account-nickname"
-              type="text"
-              value={formData.preferredNickname}
-              disabled={isLoading}
-              onChange={(e) => {
-                setFormData({ ...formData, preferredNickname: e.target.value });
-                if (serverError) setServerError(null);
-              }}
-              placeholder="e.g. Sam"
-              className="w-full bg-[#071629] border border-[#16365B] rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none focus:border-[#B9E5FF] transition-colors disabled:opacity-60"
-            />
-            <p className="text-[11px] text-slate-400 mt-1">
-              Used for greetings. If left blank, your first name will be used automatically.
-            </p>
-          </div>
-
-          {/* Password with Show/Hide and Strength Meter */}
-          <div>
-            <label htmlFor="account-password" className="block text-xs font-medium text-slate-300 mb-1.5">
-              Password <span className="text-[#B9E5FF]">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="account-password"
-                type={showPassword ? 'text' : 'password'}
-                value={formData.password}
-                disabled={isLoading}
-                onChange={(e) => {
-                  setFormData({ ...formData, password: e.target.value });
-                  if (serverError) setServerError(null);
-                }}
-                placeholder="Minimum 8 characters"
-                className={`w-full bg-[#071629] border rounded pl-3.5 pr-10 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
-                  errors.password ? 'border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-            {errors.password && <p className="text-xs text-amber-300 mt-1">{errors.password}</p>}
-
-            {/* Live Password Strength Indicator */}
-            {formData.password.length > 0 && (
-              <div className="mt-2.5 p-2.5 bg-[#071629] rounded border border-[#16365B] space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Strength:</span>
-                  <span className={`font-semibold ${
-                    passwordAnalysis.strength === 'Weak' ? 'text-rose-400' :
-                    passwordAnalysis.strength === 'Fair' ? 'text-amber-400' :
-                    passwordAnalysis.strength === 'Good' ? 'text-[#B9E5FF]' :
-                    'text-emerald-400'
-                  }`}>
-                    {passwordAnalysis.strength}
-                  </span>
-                </div>
-
-                {/* 4-bar progress indicator */}
-                <div className="grid grid-cols-4 gap-1.5 h-1.5">
-                  <div className={`rounded-full transition-colors ${
-                    passwordAnalysis.score >= 1 ? 
-                      (passwordAnalysis.score === 1 ? 'bg-rose-500' : passwordAnalysis.score === 2 ? 'bg-amber-400' : passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
-                      : 'bg-slate-700'
-                  }`} />
-                  <div className={`rounded-full transition-colors ${
-                    passwordAnalysis.score >= 2 ? 
-                      (passwordAnalysis.score === 2 ? 'bg-amber-400' : passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
-                      : 'bg-slate-700'
-                  }`} />
-                  <div className={`rounded-full transition-colors ${
-                    passwordAnalysis.score >= 3 ? 
-                      (passwordAnalysis.score === 3 ? 'bg-[#B9E5FF]' : 'bg-emerald-400') 
-                      : 'bg-slate-700'
-                  }`} />
-                  <div className={`rounded-full transition-colors ${
-                    passwordAnalysis.score >= 4 ? 'bg-emerald-400' : 'bg-slate-700'
-                  }`} />
-                </div>
-
-                {/* Requirements Checklist */}
-                <div className="grid grid-cols-2 gap-1 pt-1 text-[11px]">
-                  <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasMinLength ? 'text-emerald-300' : 'text-slate-400'}`}>
-                    {passwordAnalysis.hasMinLength ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
-                    <span>At least 8 characters</span>
-                  </div>
-                  <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasLower && passwordAnalysis.hasUpper ? 'text-emerald-300' : 'text-slate-400'}`}>
-                    {passwordAnalysis.hasLower && passwordAnalysis.hasUpper ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
-                    <span>Upper & lower case</span>
-                  </div>
-                  <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasNumber ? 'text-emerald-300' : 'text-slate-400'}`}>
-                    {passwordAnalysis.hasNumber ? <Check className="w-3 h-3 text-emerald-400" /> : <X className="w-3 h-3 text-slate-500" />}
-                    <span>At least one number</span>
-                  </div>
-                  <div className={`flex items-center gap-1.5 ${passwordAnalysis.hasSpecial ? 'text-emerald-300' : 'text-slate-400'}`}>
-                    {passwordAnalysis.hasSpecial ? <Check className="w-3 h-3 text-emerald-400" /> : <span className="w-3 text-center text-slate-500">•</span>}
-                    <span>Symbol (optional)</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Confirm Password with Show/Hide and Live Match Feedback */}
-          <div>
-            <label htmlFor="account-confirm-password" className="block text-xs font-medium text-slate-300 mb-1.5">
-              Confirm Password <span className="text-[#B9E5FF]">*</span>
-            </label>
-            <div className="relative">
-              <input
-                id="account-confirm-password"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={formData.confirmPassword}
-                disabled={isLoading}
-                onChange={(e) => {
-                  setFormData({ ...formData, confirmPassword: e.target.value });
-                  if (serverError) setServerError(null);
-                }}
-                placeholder="Repeat password"
-                className={`w-full bg-[#071629] border rounded pl-3.5 pr-10 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
-                  errors.confirmPassword ? 'border-amber-400' : 
-                  confirmMatch === true ? 'border-emerald-500 focus:border-emerald-400' :
-                  confirmMatch === false ? 'border-amber-400 focus:border-amber-400' :
-                  'border-[#16365B] focus:border-[#B9E5FF]'
-                }`}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
-                aria-label={showConfirmPassword ? 'Hide confirmed password' : 'Show confirmed password'}
-              >
-                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-
-            {/* Live Match Notification */}
-            {formData.confirmPassword.length > 0 && (
-              <div className="mt-1.5 text-xs flex items-center gap-1.5">
-                {confirmMatch ? (
-                  <span className="text-emerald-400 flex items-center gap-1 font-medium">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Passwords match</span>
-                  </span>
-                ) : (
-                  <span className="text-amber-300 flex items-center gap-1 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Passwords don't match</span>
-                  </span>
-                )}
-              </div>
-            )}
-            {errors.confirmPassword && !formData.confirmPassword && (
-              <p className="text-xs text-amber-300 mt-1">{errors.confirmPassword}</p>
-            )}
-          </div>
-
-          {/* Create Account Button */}
-          <button
-            type="submit"
-            disabled={isLoading || (formData.confirmPassword.length > 0 && confirmMatch === false)}
-            className="w-full py-2.5 px-4 rounded bg-[#B9E5FF] text-[#071629] font-semibold text-sm hover:bg-white transition-colors cursor-pointer shadow-sm disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-          >
-            {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-            <span>{isLoading ? 'Creating Account...' : 'Create Account'}</span>
-          </button>
-        </form>
-
-        {/* Already registered? Sign in */}
-        <div className="pt-2 text-center text-xs text-slate-400 border-t border-[#16365B]">
-          <span>Already registered? </span>
-          <button
-            type="button"
-            onClick={() => onNavigate('signin')}
-            className="text-[#B9E5FF] font-medium hover:underline cursor-pointer"
-          >
-            Sign in.
-          </button>
-        </div>
       </div>
     </div>
   );

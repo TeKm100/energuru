@@ -57,10 +57,9 @@ export const ForgotPasswordPage: React.FC<ForgotPasswordPageProps> = ({ onNaviga
         const errorMsg = error.message.toLowerCase();
         if (errorMsg.includes('failed to fetch') || errorMsg.includes('network')) {
           setServerError(`Connection failed: Unable to communicate with the authentication server (${supabaseUrl || 'configured endpoint'}). Please verify your internet connection.`);
-        } else if (errorMsg.includes('rate limit')) {
-          setServerError('Too many password reset requests. Please wait a few minutes before trying again.');
+        } else if (errorMsg.includes('rate limit') || errorMsg.includes('seconds') || errorMsg.includes('over_email_send_rate_limit')) {
+          setServerError('Supabase security rate limit: Too many password reset requests have been made recently. Please wait 60 seconds before trying again, or check your spam/junk folder.');
         } else {
-          // Supabase generic message or error
           setServerError(error.message);
         }
         return;

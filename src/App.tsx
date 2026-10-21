@@ -238,11 +238,8 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Sign out handler
+  // Sign out handler (immediate optimistic local state clearance for single-click response)
   const handleSignOut = async () => {
-    if (isSupabaseConfigured) {
-      await supabase.auth.signOut();
-    }
     setUserSession(null);
     setUserProfile(null);
     setIsPasswordRecoveryMode(false);
@@ -250,6 +247,14 @@ export default function App() {
     setShowOnboarding(false);
     setCurrentPage('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (isSupabaseConfigured) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {
+        console.warn('Supabase sign out error:', err);
+      }
+    }
   };
 
   // Complete onboarding handler (updates nickname and sets completion flag)
@@ -328,7 +333,22 @@ export default function App() {
 
         {/* Authenticated Page Content */}
         <main className="flex-1 pb-16">
-          {currentPage === 'dashboard' && (
+          {(![
+            'equipment',
+            'energy-costs',
+            'outage-prep',
+            'community-funding',
+            'connector',
+            'connect-device',
+            'buy-connector',
+            'get-quote',
+            'plans',
+            'profile',
+            'settings',
+            'about',
+            'how-it-works',
+            'contact'
+          ].includes(currentPage) || currentPage === 'dashboard') && (
             <DashboardPage
               userProfile={userProfile}
               userEmail={userSession.user?.email || null}

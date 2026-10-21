@@ -35,16 +35,45 @@ export const supabase = createClient(
   }
 );
 
+/** Canonical production origin for EnerGuru */
+export const CANONICAL_PRODUCTION_ORIGIN = 'https://energuru.vercel.app';
+
 /**
  * Resolves the appropriate authentication redirect URL for the current runtime environment.
- * Ensures we use window.location.origin instead of hardcoded localhost URLs when deployed,
- * while automatically supporting localhost during local development and custom domains later.
+ * Priority order:
+ * 1. Explicit environment variable override: VITE_SITE_URL or VITE_AUTH_REDIRECT_ORIGIN
+ * 2. Localhost / local IP development: window.location.origin (e.g., http://localhost:3000)
+ * 3. Canonical production domain: https://energuru.vercel.app (ensures emails routed to production)
  */
 export function getAuthRedirectUrl(subpath: string = ''): string {
-  if (typeof window === 'undefined') return '';
-  const origin = window.location.origin;
-  const path = subpath ? (subpath.startsWith('/') ? subpath : `/${subpath}`) : '';
-  return `${origin}${path}`;
+  let baseOrigin = CANONICAL_PRODUCTION_ORIGIN;
+
+  const envOverride = (
+    (import.meta.env.VITE_SITE_URL as string) ||
+    (import.meta.env.VITE_AUTH_REDIRECT_ORIGIN as string) ||
+    ''
+  ).trim();
+
+  if (envOverride) {
+    baseOrigin = envOverride.replace(/\/+$/, '');
+  } else if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    const isLocalhost = 
+      hostname === 'localhost' || 
+      hostname === '127.0.0.1' || 
+      hostname.endsWith('.local') ||
+      hostname === '0.0.0.0';
+
+    if (isLocalhost) {
+      baseOrigin = window.location.origin;
+    } else {
+      // For all deployments, custom domains, and previews, enforce canonical production domain
+      baseOrigin = CANONICAL_PRODUCTION_ORIGIN;
+    }
+  }
+
+  const cleanSubpath = subpath ? (subpath.startsWith('/') ? subpath : `/${subpath}`) : '';
+  return `${baseOrigin}${cleanSubpath}`;
 }
 
 export interface AuthCallbackParams {
