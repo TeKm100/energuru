@@ -1,0 +1,8 @@
+{
+  "name": "EnerGuru",
+  "description": "EnerGuru - Smarter Energy. Stay Aware. Stay Prepared. Energy intelligence and readiness platform by Tekm EnerGuru Technologies and Solutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
