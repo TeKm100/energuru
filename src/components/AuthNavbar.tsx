@@ -112,7 +112,7 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
     <header className="sticky top-0 z-40 bg-[#0B1B33] border-b border-[#16365B] shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Brand */}
-        <div className="flex items-center gap-6 lg:gap-8 shrink-0">
+        <div className="flex items-center gap-4 shrink-0">
           <button 
             onClick={() => handleNav('dashboard')} 
             className="cursor-pointer text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-[#B9E5FF] rounded"
@@ -120,36 +120,14 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
           >
             <Logo size="md" />
           </button>
-
-          {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {mainNavLinks.map((link) => {
-              const Icon = link.icon;
-              const isActive = currentPage === link.id;
-              return (
-                <button
-                  key={link.id}
-                  onClick={() => handleNav(link.id)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
-                    isActive
-                      ? 'bg-[#16365B] text-white'
-                      : 'text-slate-300 hover:text-white hover:bg-[#16365B]/50'
-                  }`}
-                >
-                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-[#B9E5FF]' : 'text-slate-400'}`} />
-                  <span>{link.label}</span>
-                </button>
-              );
-            })}
-          </nav>
         </div>
 
-        {/* Desktop Right Side CTA & Profile Menu */}
-        <div className="hidden md:flex items-center gap-3">
+        {/* Right Side CTA, Profile Menu & Universal Menu Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {/* Quote Request CTA */}
           <button
             onClick={() => handleNav('get-quote')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-sm ${
+            className={`hidden sm:inline-flex px-3 py-1.5 rounded-lg text-xs font-bold transition-all items-center gap-1.5 cursor-pointer shadow-sm ${
               currentPage === 'get-quote'
                 ? 'bg-[#B9E5FF] text-[#071629]'
                 : 'bg-[#16365B] text-[#B9E5FF] hover:bg-[#B9E5FF] hover:text-[#071629] border border-[#B9E5FF]/30'
@@ -170,13 +148,13 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
               <div className="w-8 h-8 rounded-full bg-[#16365B] border border-[#B9E5FF]/40 text-[#B9E5FF] font-bold text-xs flex items-center justify-center">
                 {initial}
               </div>
-              <div className="text-left text-xs max-w-[120px] truncate hidden xl:block">
+              <div className="text-left text-xs max-w-[120px] truncate hidden md:block">
                 <span className="font-semibold text-white block truncate">{displayName}</span>
               </div>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
             </button>
 
-            {/* Dropdown Menu (no flaky mouseleave, uses robust outside-click) */}
+            {/* Dropdown Menu */}
             {profileDropdownOpen && (
               <div 
                 className="absolute right-0 mt-2 w-56 bg-[#0B1B33] border border-[#16365B] rounded-lg shadow-2xl py-1.5 z-50 text-xs"
@@ -219,22 +197,23 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
               </div>
             )}
           </div>
-        </div>
 
-        {/* Mobile Hamburger Toggle Button */}
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="lg:hidden p-2 rounded text-slate-300 hover:text-white hover:bg-[#16365B] focus:outline-none focus:ring-2 focus:ring-[#B9E5FF] cursor-pointer"
-          aria-label="Open navigation drawer"
-          aria-expanded={mobileMenuOpen}
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+          {/* Universal Menu Toggle Button (Visible on Mobile, Tablet, Laptop, and Desktop) */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 sm:px-3 sm:py-1.5 rounded-lg text-slate-200 hover:text-white bg-[#071629] hover:bg-[#16365B] border border-[#16365B] hover:border-[#B9E5FF]/40 focus:outline-none focus:ring-2 focus:ring-[#B9E5FF] cursor-pointer flex items-center gap-2 transition-all shadow-xs"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <Menu className="w-5 h-5 text-[#B9E5FF]" />
+            <span className="text-xs font-semibold tracking-wide uppercase">Menu</span>
+          </button>
+        </div>
       </div>
 
-      {/* Mobile Sliding Side Drawer & Backdrop Overlay */}
+      {/* Universal Sliding Side Drawer & Backdrop Overlay (All Screen Sizes) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50">
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"

@@ -67,31 +67,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           <Logo size="md" />
         </button>
 
-        {/* Desktop Links */}
-        <nav className="hidden lg:flex items-center gap-6 text-sm font-medium">
-          {navLinks.map((link) => {
-            const isActive = currentPage === link.id;
-            return (
-              <button
-                key={link.id}
-                onClick={() => handleNav(link.id)}
-                className={`transition-colors cursor-pointer py-1 border-b-2 text-xs font-semibold ${
-                  isActive
-                    ? 'text-white border-[#B9E5FF]'
-                    : 'text-slate-300 border-transparent hover:text-white hover:border-slate-500'
-                }`}
-              >
-                {link.label}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* Desktop Auth & Quote Buttons */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
+        {/* Header Right Actions & Universal Menu Toggle */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Quick CTA: Get a Quote */}
           <button
             onClick={() => handleNav('get-quote')}
-            className={`text-xs font-semibold px-3 py-1.5 rounded transition-colors cursor-pointer inline-flex items-center gap-1.5 ${
+            className={`hidden sm:inline-flex text-xs font-semibold px-3 py-1.5 rounded transition-colors cursor-pointer items-center gap-1.5 ${
               currentPage === 'get-quote'
                 ? 'bg-[#16365B] text-[#B9E5FF] border border-[#B9E5FF]/40'
                 : 'text-slate-300 hover:text-white border border-[#16365B] hover:bg-[#16365B]/60'
@@ -101,10 +82,11 @@ export const Navbar: React.FC<NavbarProps> = ({
             <span>Get a Quote</span>
           </button>
 
+          {/* Auth Status / Quick Actions */}
           {isAuthenticated ? (
             <button
               onClick={() => handleNav('dashboard')}
-              className={`text-xs font-semibold px-3.5 py-1.5 rounded transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm ${
+              className={`hidden sm:inline-flex text-xs font-semibold px-3.5 py-1.5 rounded transition-colors cursor-pointer items-center gap-1.5 shadow-sm ${
                 currentPage === 'dashboard'
                   ? 'bg-white text-[#071629]'
                   : 'bg-[#B9E5FF] text-[#071629] hover:bg-white'
@@ -114,7 +96,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <span>Dashboard ({displayName})</span>
             </button>
           ) : (
-            <>
+            <div className="hidden sm:flex items-center gap-2">
               <button
                 onClick={() => handleNav('signin')}
                 className={`text-xs font-medium px-3 py-1.5 rounded transition-colors cursor-pointer ${
@@ -127,29 +109,30 @@ export const Navbar: React.FC<NavbarProps> = ({
               </button>
               <button
                 onClick={() => handleNav('create-account')}
-                className="text-xs font-semibold px-3.5 py-1.5 rounded bg-[#B9E5FF] text-[#071629] hover:bg-white transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
+                className="text-xs font-semibold px-3 py-1.5 rounded bg-[#B9E5FF] text-[#071629] hover:bg-white transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-sm"
               >
                 <span>Create Account</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            </>
+            </div>
           )}
-        </div>
 
-        {/* Mobile Menu Toggle Button */}
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="lg:hidden p-2 rounded text-slate-300 hover:text-white hover:bg-[#16365B] focus:outline-none focus:ring-2 focus:ring-[#B9E5FF] cursor-pointer"
-          aria-label="Open mobile navigation menu"
-          aria-expanded={mobileMenuOpen}
-        >
-          <Menu className="w-6 h-6" />
-        </button>
+          {/* Universal Menu Toggle Button (Visible on Mobile, Tablet, Laptop, and Desktop) */}
+          <button
+            onClick={() => setMobileMenuOpen(true)}
+            className="p-2 sm:px-3 sm:py-1.5 rounded-lg text-slate-200 hover:text-white bg-[#0B1B33] hover:bg-[#16365B] border border-[#16365B] hover:border-[#B9E5FF]/40 focus:outline-none focus:ring-2 focus:ring-[#B9E5FF] cursor-pointer flex items-center gap-2 transition-all shadow-xs"
+            aria-label="Open navigation menu"
+            aria-expanded={mobileMenuOpen}
+          >
+            <Menu className="w-5 h-5 text-[#B9E5FF]" />
+            <span className="text-xs font-semibold tracking-wide uppercase">Menu</span>
+          </button>
+        </div>
       </div>
 
-      {/* Mobile Sliding Side Drawer & Backdrop Overlay */}
+      {/* Universal Sliding Side Drawer & Backdrop Overlay (All Screen Sizes) */}
       {mobileMenuOpen && (
-        <div className="lg:hidden fixed inset-0 z-50">
+        <div className="fixed inset-0 z-50">
           {/* Backdrop */}
           <div 
             className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
@@ -162,7 +145,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="fixed inset-y-0 left-0 w-[290px] max-w-[85vw] bg-[#071629] border-r border-[#16365B] shadow-2xl z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out"
             role="dialog"
             aria-modal="true"
-            aria-label="Mobile Navigation Menu"
+            aria-label="Navigation Menu"
           >
             {/* Drawer Header */}
             <div className="h-16 px-5 flex items-center justify-between border-b border-[#16365B] shrink-0">
