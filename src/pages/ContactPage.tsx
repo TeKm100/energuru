@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Page } from '../types';
-import { AlertCircle, CheckCircle, Mail, Clock, HelpCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Mail, Clock, HelpCircle, Loader2, Send } from 'lucide-react';
 
 interface ContactPageProps {
   onNavigate: (page: Page) => void;
@@ -15,7 +15,9 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [submissionAttempted, setSubmissionAttempted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const validate = () => {
     const errs: Record<string, string> = {};
@@ -24,8 +26,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
     }
     if (!formData.email.trim()) {
       errs.email = 'Please provide your email address.';
-    } else if (!formData.email.includes('@') || !formData.email.includes('.')) {
-      errs.email = 'Please enter a valid email address.';
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(formData.email.trim())) {
+        errs.email = 'Please enter a valid email address.';
+      }
     }
     if (!formData.subject.trim()) {
       errs.subject = 'Please provide a subject.';
@@ -38,13 +43,55 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
     return errs;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     const validationErrors = validate();
     setErrors(validationErrors);
+    setServerError(null);
 
-    if (Object.keys(validationErrors).length === 0) {
-      setSubmissionAttempted(true);
+    if (Object.keys(validationErrors).length > 0) {
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const response = await fetch('https://formspree.io/f/mdeaqwvk', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name.trim(),
+          email: formData.email.trim(),
+          subject: formData.subject.trim(),
+          message: formData.message.trim(),
+          _subject: `EnerGuru General Inquiry: ${formData.subject.trim()}`,
+        }),
+      });
+
+      if (response.ok) {
+        setSubmitSuccess(true);
+      } else {
+        let errorMsg = 'Formspree was unable to process your message. Please verify your details and try again.';
+        try {
+          const data = await response.json();
+          if (data && data.errors && Array.isArray(data.errors) && data.errors.length > 0) {
+            errorMsg = data.errors.map((err: any) => err.message || err.field).join('. ');
+          } else if (data && data.error) {
+            errorMsg = data.error;
+          }
+        } catch {
+          // Keep default error message
+        }
+        setServerError(errorMsg);
+      }
+    } catch {
+      setServerError('A network error occurred while sending your message. Please verify your internet connection and try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -64,54 +111,63 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
         </p>
       </section>
 
-      {/* Backend Integration Transparency Banner */}
-      <section className="bg-[#0B1B33] border border-amber-800/60 rounded-xl p-5 space-y-2">
-        <div className="flex items-center gap-2 text-amber-300 font-semibold text-sm">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>Notice: Form Submissions Require Backend Integration</span>
+      {/* Direct Inquiries Dispatch Notice */}
+      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-5 space-y-2">
+        <div className="flex items-center gap-2 text-[#B9E5FF] font-semibold text-sm">
+          <Mail className="w-5 h-5 shrink-0 text-[#B9E5FF]" />
+          <span>General Enquiries Dispatch</span>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed">
-          In this Stage 1 public website foundation, external email dispatch services (e.g., SMTP or SendGrid API) 
-          are not yet wired up. This form performs client-side field validation and demonstrates the workflow, 
-          but will <strong>not</strong> claim an email was dispatched until live email infrastructure is provisioned.
+          Inquiries submitted through this form are delivered securely to the EnerGuru team inbox via our verified Formspree dispatch service.
         </p>
       </section>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {/* Form Column */}
         <div className="md:col-span-2 bg-[#0B1B33] border border-[#16365B] rounded-xl p-6 sm:p-8">
-          {submissionAttempted ? (
+          {submitSuccess ? (
             <div className="space-y-6">
-              <div className="bg-[#16365B]/50 border border-[#B9E5FF]/40 rounded-lg p-6 space-y-3">
-                <div className="flex items-center gap-2 text-[#B9E5FF]">
+              <div className="bg-[#16365B]/50 border border-emerald-500/40 rounded-lg p-6 space-y-4">
+                <div className="flex items-center gap-2 text-emerald-400">
                   <CheckCircle className="w-6 h-6 shrink-0" />
-                  <h3 className="text-base font-bold text-white">Form Validation Successful</h3>
+                  <h3 className="text-base font-bold text-white">Message Delivered Successfully</h3>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Your inquiry details have been verified locally:
+                  Thank you for reaching out, <strong className="text-white">{formData.name}</strong>. Your message has been received by the EnerGuru team. We will review your inquiry and reply to <strong className="text-[#B9E5FF]">{formData.email}</strong> shortly.
                 </p>
                 <div className="bg-[#071629] p-3 rounded border border-[#16365B] text-xs space-y-1.5 text-slate-300">
                   <p><strong className="text-white">Sender:</strong> {formData.name} ({formData.email})</p>
                   <p><strong className="text-white">Subject:</strong> {formData.subject}</p>
-                  <p><strong className="text-white">Message preview:</strong> “{formData.message.slice(0, 120)}{formData.message.length > 120 ? '...' : ''}”</p>
-                </div>
-                <div className="pt-2 text-xs text-amber-200/90 bg-amber-950/40 p-3 rounded border border-amber-800/40">
-                  <strong>Backend Connection Pending:</strong> As noted above, message dispatch requires connecting an email API or database service during Stage 2 infrastructure setup. No fake email was simulated.
+                  <p><strong className="text-white">Status:</strong> Dispatched to team inbox</p>
                 </div>
               </div>
 
               <button
+                type="button"
                 onClick={() => {
-                  setSubmissionAttempted(false);
+                  setSubmitSuccess(false);
                   setFormData({ name: '', email: '', subject: '', message: '' });
+                  setServerError(null);
+                  setErrors({});
                 }}
                 className="text-xs text-[#B9E5FF] hover:underline cursor-pointer"
               >
-                ← Clear form and prepare another message
+                ← Clear form and send another message
               </button>
             </div>
           ) : (
             <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              {serverError && (
+                <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-lg flex items-start gap-3 text-xs text-rose-200">
+                  <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <span className="font-semibold block text-rose-100">Unable to Send Message</span>
+                    <p>{serverError}</p>
+                    <p className="text-[11px] text-rose-300/80">Please check your details and try again.</p>
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label htmlFor="contact-name" className="block text-xs font-medium text-slate-300 mb-1.5">
                   Full Name <span className="text-[#B9E5FF]">*</span>
@@ -119,10 +175,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
                 <input
                   id="contact-name"
                   type="text"
+                  disabled={isSubmitting}
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Alex Morgan"
-                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
                     errors.name ? 'border-amber-400 focus:border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
                   }`}
                 />
@@ -136,10 +193,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
                 <input
                   id="contact-email"
                   type="email"
+                  disabled={isSubmitting}
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="name@example.com"
-                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
                     errors.email ? 'border-amber-400 focus:border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
                   }`}
                 />
@@ -153,10 +211,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
                 <input
                   id="contact-subject"
                   type="text"
+                  disabled={isSubmitting}
                   value={formData.subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   placeholder="e.g. Inquiry regarding regional generator maintenance logs"
-                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
                     errors.subject ? 'border-amber-400 focus:border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
                   }`}
                 />
@@ -170,10 +229,11 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
                 <textarea
                   id="contact-message"
                   rows={5}
+                  disabled={isSubmitting}
                   value={formData.message}
                   onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                   placeholder="Please describe your question or context..."
-                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors ${
+                  className={`w-full bg-[#071629] border rounded px-3.5 py-2 text-sm text-white placeholder-slate-400 focus:outline-none transition-colors disabled:opacity-60 ${
                     errors.message ? 'border-amber-400 focus:border-amber-400' : 'border-[#16365B] focus:border-[#B9E5FF]'
                   }`}
                 />
@@ -182,9 +242,20 @@ export const ContactPage: React.FC<ContactPageProps> = ({ onNavigate }) => {
 
               <button
                 type="submit"
-                className="w-full sm:w-auto px-6 py-2.5 rounded bg-[#B9E5FF] text-[#071629] font-semibold text-sm hover:bg-white transition-colors cursor-pointer"
+                disabled={isSubmitting}
+                className="w-full sm:w-auto px-6 py-2.5 rounded bg-[#B9E5FF] text-[#071629] font-semibold text-sm hover:bg-white transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 shadow-sm"
               >
-                Validate & Submit Inquiry
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-[#071629]" />
+                    <span>Sending Inquiry...</span>
+                  </>
+                ) : (
+                  <>
+                    <Send className="w-4 h-4 text-[#071629]" />
+                    <span>Send Inquiry</span>
+                  </>
+                )}
               </button>
             </form>
           )}
