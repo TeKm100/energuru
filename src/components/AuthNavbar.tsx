@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Logo } from './Logo';
 import { AuthPage } from '../types';
 import { 
@@ -82,15 +83,29 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
     };
   }, [profileDropdownOpen]);
 
-  // Lock body scroll when mobile drawer is open
+  // Lock body scroll when drawer is open without layout shift
   useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    if (!mobileMenuOpen) return;
+
+    const originalOverflow = document.body.style.overflow;
+    const originalPaddingRight = document.body.style.paddingRight;
+
+    // Check if scrollbar gutter is natively handled by CSS
+    const supportsScrollbarGutter = typeof CSS !== 'undefined' && CSS.supports && CSS.supports('scrollbar-gutter', 'stable');
+
+    // If browser doesn't support scrollbar-gutter, compensate for vertical scrollbar disappearance
+    if (!supportsScrollbarGutter) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      if (scrollbarWidth > 0) {
+        document.body.style.paddingRight = `${scrollbarWidth}px`;
+      }
     }
+
+    document.body.style.overflow = 'hidden';
+
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = originalOverflow;
+      document.body.style.paddingRight = originalPaddingRight;
     };
   }, [mobileMenuOpen]);
 
@@ -109,7 +124,8 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
   const initial = (displayName || userEmail || 'U').charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0B1B33] border-b border-[#16365B] shadow-sm">
+    <>
+      <header className="sticky top-0 z-40 bg-[#0B1B33] border-b border-[#16365B] shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
         {/* Brand */}
         <div className="flex items-center gap-4 shrink-0">
@@ -210,143 +226,145 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
           </button>
         </div>
       </div>
+    </header>
 
-      {/* Universal Sliding Side Drawer & Backdrop Overlay (All Screen Sizes) */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50">
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300"
-            onClick={() => setMobileMenuOpen(false)}
-            aria-hidden="true"
-          />
+    {/* Universal Sliding Side Drawer & Backdrop Overlay (Rendered as Viewport-Level Portal) */}
+    {mobileMenuOpen && typeof document !== 'undefined' && createPortal(
+      <div className="fixed inset-0 z-50">
+        {/* Backdrop */}
+        <div 
+          className="fixed inset-0 bg-black/70 backdrop-blur-xs transition-opacity duration-300 z-10"
+          onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
+        />
 
-          {/* Left-sliding Drawer Panel */}
-          <div 
-            className="fixed inset-y-0 left-0 w-[290px] max-w-[85vw] bg-[#071629] border-r border-[#16365B] shadow-2xl z-50 flex flex-col justify-between transform transition-transform duration-300 ease-in-out"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Authenticated Navigation Menu"
-          >
-            {/* Drawer Header */}
-            <div className="h-16 px-5 flex items-center justify-between border-b border-[#16365B] shrink-0">
-              <button 
-                onClick={() => handleNav('dashboard')} 
-                className="cursor-pointer text-left focus:outline-none"
-                aria-label="EnerGuru Dashboard Home"
-              >
-                <Logo size="md" />
-              </button>
+        {/* Left-sliding Drawer Panel */}
+        <div 
+          className="fixed inset-y-0 left-0 w-[290px] max-w-[85vw] bg-[#071629] border-r border-[#16365B] shadow-2xl z-20 flex flex-col justify-between transform transition-transform duration-300 ease-in-out"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Authenticated Navigation Menu"
+        >
+          {/* Drawer Header */}
+          <div className="h-16 px-5 flex items-center justify-between border-b border-[#16365B] shrink-0">
+            <button 
+              onClick={() => handleNav('dashboard')} 
+              className="cursor-pointer text-left focus:outline-none"
+              aria-label="EnerGuru Dashboard Home"
+            >
+              <Logo size="md" />
+            </button>
+            <button
+              onClick={() => setMobileMenuOpen(false)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#16365B] focus:outline-none focus:ring-1 focus:ring-[#B9E5FF] cursor-pointer"
+              aria-label="Close navigation drawer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Scrollable Navigation Body */}
+          <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+            {/* User profile summary banner */}
+            <div className="p-3 bg-[#0B1B33] border border-[#16365B] rounded-xl flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 truncate">
+                <div className="w-9 h-9 rounded-full bg-[#16365B] border border-[#B9E5FF]/40 text-[#B9E5FF] font-bold text-sm flex items-center justify-center shrink-0">
+                  {initial}
+                </div>
+                <div className="truncate">
+                  <span className="font-semibold text-white block text-xs truncate">{displayName}</span>
+                  <span className="text-[11px] text-slate-400 block truncate">{userEmail}</span>
+                </div>
+              </div>
               <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-[#16365B] focus:outline-none focus:ring-1 focus:ring-[#B9E5FF] cursor-pointer"
-                aria-label="Close navigation drawer"
+                onClick={() => handleNav('profile')}
+                className="text-xs text-[#B9E5FF] hover:underline shrink-0 font-medium cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                Edit
               </button>
             </div>
 
-            {/* Scrollable Navigation Body */}
-            <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-              {/* User profile summary banner */}
-              <div className="p-3 bg-[#0B1B33] border border-[#16365B] rounded-xl flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 truncate">
-                  <div className="w-9 h-9 rounded-full bg-[#16365B] border border-[#B9E5FF]/40 text-[#B9E5FF] font-bold text-sm flex items-center justify-center shrink-0">
-                    {initial}
-                  </div>
-                  <div className="truncate">
-                    <span className="font-semibold text-white block text-xs truncate">{displayName}</span>
-                    <span className="text-[11px] text-slate-400 block truncate">{userEmail}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleNav('profile')}
-                  className="text-xs text-[#B9E5FF] hover:underline shrink-0 font-medium cursor-pointer"
-                >
-                  Edit
-                </button>
+            {/* Navigation Links */}
+            <div className="space-y-1">
+              <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 px-3 pb-1">
+                Energy Systems
               </div>
-
-              {/* Navigation Links */}
-              <div className="space-y-1">
-                <div className="text-[11px] font-mono uppercase tracking-wider text-slate-400 px-3 pb-1">
-                  Energy Systems
-                </div>
-                <nav className="flex flex-col space-y-1">
-                  {mainNavLinks.map((link) => {
-                    const Icon = link.icon;
-                    const isActive = currentPage === link.id;
-                    return (
-                      <button
-                        key={link.id}
-                        onClick={() => handleNav(link.id)}
-                        className={`text-left px-3.5 py-2.5 rounded-lg font-medium text-xs flex items-center gap-3 transition-colors cursor-pointer ${
-                          isActive
-                            ? 'bg-[#16365B] text-white font-semibold border-l-2 border-[#B9E5FF]'
-                            : 'text-slate-300 hover:bg-[#0B1B33] hover:text-white'
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 ${isActive ? 'text-[#B9E5FF]' : 'text-slate-400'}`} />
-                        <span>{link.label}</span>
-                      </button>
-                    );
-                  })}
-                </nav>
-              </div>
-
-              {/* Get a Quote Action */}
-              <div className="pt-2">
-                <button
-                  onClick={() => handleNav('get-quote')}
-                  className={`w-full text-left px-3.5 py-2.5 rounded-lg font-medium text-xs flex items-center justify-between transition-colors cursor-pointer ${
-                    currentPage === 'get-quote'
-                      ? 'bg-[#16365B] text-[#B9E5FF] border border-[#B9E5FF]/40'
-                      : 'bg-[#0B1B33] text-[#B9E5FF] hover:bg-[#16365B]/60 border border-[#16365B]'
-                  }`}
-                >
-                  <span className="flex items-center gap-2.5">
-                    <FileText className="w-4 h-4 text-[#B9E5FF]" />
-                    <span>Request Commercial Quote</span>
-                  </span>
-                </button>
-              </div>
+              <nav className="flex flex-col space-y-1">
+                {mainNavLinks.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = currentPage === link.id;
+                  return (
+                    <button
+                      key={link.id}
+                      onClick={() => handleNav(link.id)}
+                      className={`text-left px-3.5 py-2.5 rounded-lg font-medium text-xs flex items-center gap-3 transition-colors cursor-pointer ${
+                        isActive
+                          ? 'bg-[#16365B] text-white font-semibold border-l-2 border-[#B9E5FF]'
+                          : 'text-slate-300 hover:bg-[#0B1B33] hover:text-white'
+                      }`}
+                    >
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#B9E5FF]' : 'text-slate-400'}`} />
+                      <span>{link.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
 
-            {/* Drawer Bottom Actions: Profile, Settings & Sign Out */}
-            <div className="p-4 border-t border-[#16365B] bg-[#0B1B33]/60 shrink-0 space-y-2">
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleNav('profile')}
-                  className="py-2 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Profile</span>
-                </button>
-                <button
-                  onClick={() => handleNav('settings')}
-                  className="py-2 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Settings className="w-3.5 h-3.5 text-slate-400" />
-                  <span>Settings</span>
-                </button>
-              </div>
-
+            {/* Get a Quote Action */}
+            <div className="pt-2">
               <button
-                onClick={handleSignOutClick}
-                disabled={isSigningOut}
-                className="w-full py-2 px-3 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+                onClick={() => handleNav('get-quote')}
+                className={`w-full text-left px-3.5 py-2.5 rounded-lg font-medium text-xs flex items-center justify-between transition-colors cursor-pointer ${
+                  currentPage === 'get-quote'
+                    ? 'bg-[#16365B] text-[#B9E5FF] border border-[#B9E5FF]/40'
+                    : 'bg-[#0B1B33] text-[#B9E5FF] hover:bg-[#16365B]/60 border border-[#16365B]'
+                }`}
               >
-                {isSigningOut ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
-                ) : (
-                  <LogOut className="w-3.5 h-3.5 text-rose-400" />
-                )}
-                <span>{isSigningOut ? 'Signing Out...' : 'Sign Out'}</span>
+                <span className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 text-[#B9E5FF]" />
+                  <span>Request Commercial Quote</span>
+                </span>
               </button>
             </div>
           </div>
+
+          {/* Drawer Bottom Actions: Profile, Settings & Sign Out */}
+          <div className="p-4 border-t border-[#16365B] bg-[#0B1B33]/60 shrink-0 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => handleNav('profile')}
+                className="py-2 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                <span>Profile</span>
+              </button>
+              <button
+                onClick={() => handleNav('settings')}
+                className="py-2 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Settings className="w-3.5 h-3.5 text-slate-400" />
+                <span>Settings</span>
+              </button>
+            </div>
+
+            <button
+              onClick={handleSignOutClick}
+              disabled={isSigningOut}
+              className="w-full py-2 px-3 rounded-lg bg-rose-950/40 hover:bg-rose-900/60 border border-rose-800/60 text-rose-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-60"
+            >
+              {isSigningOut ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-rose-400" />
+              ) : (
+                <LogOut className="w-3.5 h-3.5 text-rose-400" />
+              )}
+              <span>{isSigningOut ? 'Signing Out...' : 'Sign Out'}</span>
+            </button>
+          </div>
         </div>
-      )}
-    </header>
+      </div>,
+      document.body
+    )}
+  </>
   );
 };
