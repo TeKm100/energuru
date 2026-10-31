@@ -21,21 +21,21 @@ export const Logo: React.FC<LogoProps> = ({ className = '', size = 'md', showTag
 
   return (
     <div className={`inline-flex items-center gap-2.5 ${className}`}>
-      {/* Lightweight CSS Logo Mark */}
+      {/* Lightweight Logo Mark matching official favicon identity */}
       <div 
-        className={`${iconSizeClasses[size]} rounded-md bg-[#16365B] border border-[#B9E5FF]/30 flex items-center justify-center shrink-0 shadow-sm`}
+        className={`${iconSizeClasses[size]} rounded-lg bg-[#071629] border border-[#16365B] flex items-center justify-center shrink-0 shadow-sm`}
         aria-hidden="true"
       >
         <svg 
           viewBox="0 0 24 24" 
           fill="none" 
           className="w-4/5 h-4/5 text-[#B9E5FF]" 
-          stroke="currentColor" 
-          strokeWidth="2.2" 
+          stroke="#B9E5FF" 
+          strokeWidth="1.5" 
           strokeLinecap="round" 
           strokeLinejoin="round"
         >
-          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#B9E5FF" fillOpacity="0.15" />
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" fill="#B9E5FF" />
         </svg>
       </div>
       <div className="flex flex-col">
