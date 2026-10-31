@@ -79,7 +79,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setTimeout(() => setControlNotice(null), 4000);
   };
 
-  // 5 Primary Navigation Groups
+  // 4 Core Workspace Navigation Groups (Account & Plans remains accessible via top navigation and profile)
   const navigationGroups = [
     {
       id: 'energy-management' as AuthPage,
@@ -120,16 +120,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       featuresCount: 'Framework',
       badge: 'Concept',
       badgeType: 'framework',
-    },
-    {
-      id: 'account-plans' as AuthPage,
-      title: 'Account & Plans',
-      category: 'Profile & Subscriptions',
-      desc: 'Profile credentials, authentication security settings, and enterprise advisory tier management.',
-      icon: User,
-      featuresCount: 'Settings Hub',
-      badge: 'Account',
-      badgeType: 'live',
     },
   ];
 
@@ -478,7 +468,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </section>
 
-      {/* 4. PRIMARY NAVIGATION DESTINATIONS (THE 5 CORE WORKSPACE GROUPS) */}
+      {/* 4. PRIMARY NAVIGATION DESTINATIONS (THE 4 CORE WORKSPACE GROUPS) */}
       <section className="space-y-3">
         <div className="flex items-center justify-between border-b border-[#16365B] pb-2">
           <div className="flex items-center gap-2">
@@ -488,12 +478,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </h2>
           </div>
           <span className="text-[11px] font-mono text-[#B9E5FF]">
-            5 Groups
+            4 Groups
           </span>
         </div>
 
-        {/* 5 Compact Navigation Cards Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
+        {/* 4 Compact Navigation Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
           {navigationGroups.map((group) => {
             const Icon = group.icon;
 

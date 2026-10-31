@@ -48,6 +48,21 @@ export interface UserProfile {
   updated_at?: string;
 }
 
+export type AppRole = 
+  | 'customer'
+  | 'technician'
+  | 'support_staff'
+  | 'admin'
+  | 'super_admin';
+
+export interface UserRoleRecord {
+  id: string;
+  user_id: string;
+  role: AppRole;
+  assigned_by?: string | null;
+  created_at: string;
+}
+
 export type QuoteStatus = 
   | 'Submitted' 
   | 'Under Review' 
