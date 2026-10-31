@@ -23,7 +23,12 @@ export type AuthPage =
   | 'get-quote'
   | 'plans'
   | 'profile' 
-  | 'settings';
+  | 'settings'
+  | 'energy-monitoring'
+  | 'power-control'
+  | 'alerts'
+  | 'ai-intelligence'
+  | 'connector-management';
 
 export type Page = PublicPage | AuthPage;
 

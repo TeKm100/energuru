@@ -36,6 +36,7 @@ import { ConnectDevicePage } from './pages/ConnectDevicePage';
 import { BuyConnectorPage } from './pages/BuyConnectorPage';
 import { GetQuotePage } from './pages/GetQuotePage';
 import { PlansPage } from './pages/PlansPage';
+import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 
 import { Loader2 } from 'lucide-react';
 
@@ -315,13 +316,40 @@ export default function App() {
   if (userSession && !isPasswordRecoveryMode && currentPage !== 'reset-password') {
     // Current page cast for AuthNavbar active tab
     const authCurrentPage = (
-      ['dashboard', 'equipment', 'energy-costs', 'outage-prep', 'community-funding', 'connector', 'connect-device', 'buy-connector', 'get-quote', 'plans', 'profile', 'settings'].includes(currentPage)
+      [
+        'dashboard', 
+        'equipment', 
+        'energy-costs', 
+        'outage-prep', 
+        'community-funding', 
+        'connector', 
+        'connect-device', 
+        'buy-connector', 
+        'get-quote', 
+        'plans', 
+        'profile', 
+        'settings',
+        'energy-monitoring',
+        'power-control',
+        'alerts',
+        'ai-intelligence',
+        'connector-management'
+      ].includes(currentPage)
         ? currentPage
         : 'dashboard'
     ) as AuthPage;
 
+    const isLightPage = [
+      'dashboard',
+      'energy-monitoring',
+      'power-control',
+      'alerts',
+      'ai-intelligence',
+      'connector-management'
+    ].includes(currentPage);
+
     return (
-      <div className="min-h-screen bg-[#071629] text-white flex flex-col font-sans selection:bg-[#B9E5FF] selection:text-[#071629]">
+      <div className={`min-h-screen ${isLightPage ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#071629] text-white'} flex flex-col font-sans selection:bg-emerald-600 selection:text-white transition-colors`}>
         {/* Authenticated Navigation Bar */}
         <AuthNavbar
           currentPage={authCurrentPage}
@@ -347,13 +375,31 @@ export default function App() {
             'settings',
             'about',
             'how-it-works',
-            'contact'
+            'contact',
+            'energy-monitoring',
+            'power-control',
+            'alerts',
+            'ai-intelligence',
+            'connector-management'
           ].includes(currentPage) || currentPage === 'dashboard') && (
             <DashboardPage
               userProfile={userProfile}
               userEmail={userSession.user?.email || null}
               onNavigate={(p) => handleNavigate(p)}
               onOpenOnboarding={() => setShowOnboarding(true)}
+            />
+          )}
+
+          {[
+            'energy-monitoring',
+            'power-control',
+            'alerts',
+            'ai-intelligence',
+            'connector-management'
+          ].includes(currentPage) && (
+            <ModulePlaceholderPage
+              pageId={currentPage as AuthPage}
+              onNavigate={handleNavigate}
             />
           )}
 

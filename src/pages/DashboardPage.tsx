@@ -1,20 +1,35 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { AuthPage, UserProfile } from '../types';
 import { 
-  Cpu, 
+  Zap, 
+  Activity, 
+  Power, 
+  Bell, 
+  BrainCircuit, 
+  Sliders, 
+  Wrench, 
+  ShieldAlert, 
+  LineChart, 
   Users, 
   Briefcase, 
-  Wrench, 
+  Cpu, 
+  CreditCard,
+  LayoutDashboard,
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock, 
   ArrowRight, 
-  Activity, 
-  FileText, 
+  User, 
+  Settings, 
   Sparkles, 
-  ShieldCheck,
-  CheckCircle2,
-  Clock,
+  HelpCircle,
   Radio,
-  Layers,
-  HelpCircle
+  X,
+  Gauge,
+  TrendingUp,
+  ShieldCheck,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -31,312 +46,588 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onOpenOnboarding,
 }) => {
   const displayName = userProfile?.nickname || userProfile?.full_name || userEmail?.split('@')[0] || 'Member';
+  const initial = (displayName || userEmail || 'U').charAt(0).toUpperCase();
+
+  // Notification panel toggle state
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  // Quick Control Preview simulated toggle state
+  const [simulatedPowerState, setSimulatedPowerState] = useState<'ON' | 'OFF'>('ON');
+  const [controlActionNotice, setControlActionNotice] = useState<string | null>(null);
+
+  // Close notifications on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
+        setShowNotifications(false);
+      }
+    };
+    if (showNotifications) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showNotifications]);
+
+  const handleSimulatedSwitch = (newState: 'ON' | 'OFF') => {
+    setSimulatedPowerState(newState);
+    setControlActionNotice(
+      newState === 'ON'
+        ? 'Simulated supply state set to ONLINE. (Visual demonstration only. No real command was transmitted to physical electrical hardware).'
+        : 'Simulated supply state set to DISCONNECTED. (Visual demonstration only. No real command was transmitted to physical electrical hardware).'
+    );
+  };
+
+  // 13 Navigation Sections
+  const navigationSections = [
+    {
+      id: 'dashboard' as AuthPage,
+      title: 'Dashboard',
+      desc: 'Central overview of power readiness, device telemetry, and platform status.',
+      icon: LayoutDashboard,
+      badge: 'Current View',
+      badgeType: 'active',
+    },
+    {
+      id: 'energy-monitoring' as AuthPage,
+      title: 'Energy Monitoring',
+      desc: 'High-frequency line voltage, current demand, and power factor logging.',
+      icon: Activity,
+      badge: 'In Development',
+      badgeType: 'planned',
+    },
+    {
+      id: 'power-control' as AuthPage,
+      title: 'Power Control Centre',
+      desc: 'Safety-interlocked remote breaker control & automated load shedding sandbox.',
+      icon: Power,
+      badge: 'In Development',
+      badgeType: 'planned',
+    },
+    {
+      id: 'alerts' as AuthPage,
+      title: 'Alerts & Notifications',
+      desc: 'Instant outage dispatch, voltage spike warnings, and maintenance alerts.',
+      icon: Bell,
+      badge: 'In Development',
+      badgeType: 'planned',
+    },
+    {
+      id: 'ai-intelligence' as AuthPage,
+      title: 'AI Energy Intelligence',
+      desc: 'DisCo feeder reliability forecasting and generator diesel fuel optimization.',
+      icon: BrainCircuit,
+      badge: 'In Development',
+      badgeType: 'planned',
+    },
+    {
+      id: 'connector-management' as AuthPage,
+      title: 'Smart Connector Management',
+      desc: 'Cellular SIM provisioning, OTA firmware updates, and electrician commissioning.',
+      icon: Sliders,
+      badge: 'In Development',
+      badgeType: 'planned',
+    },
+    {
+      id: 'equipment' as AuthPage,
+      title: 'Equipment Registry & Maintenance',
+      desc: 'Digital registry for generators, solar inverters, battery banks, and service logs.',
+      icon: Wrench,
+      badge: 'Interactive',
+      badgeType: 'live',
+    },
+    {
+      id: 'outage-prep' as AuthPage,
+      title: 'Outage Prep',
+      desc: 'Structured protocols for blackouts, water pumping, fuel storage, and safety.',
+      icon: ShieldAlert,
+      badge: 'Interactive',
+      badgeType: 'live',
+    },
+    {
+      id: 'energy-costs' as AuthPage,
+      title: 'Cost & Energy Reports',
+      desc: 'Utility Band A/B/C tariff modeling compared against generator fuel costs.',
+      icon: LineChart,
+      badge: 'Interactive',
+      badgeType: 'live',
+    },
+    {
+      id: 'community-funding' as AuthPage,
+      title: 'Community Energy',
+      desc: 'Public & social impact microgrids for clinics, schools, and farm cold storage.',
+      icon: Users,
+      badge: 'Concept Framework',
+      badgeType: 'framework',
+    },
+    {
+      id: 'get-quote' as AuthPage,
+      title: 'Commercial & Enterprise',
+      desc: 'Tailored electrical engineering consultations, site audits, and formal quotes.',
+      icon: Briefcase,
+      badge: 'Request a Quote',
+      badgeType: 'live',
+    },
+    {
+      id: 'connector' as AuthPage,
+      title: 'Hardware Engineering',
+      desc: 'DIN-rail smart electricity connector R&D specs and device pairing sandbox.',
+      icon: Cpu,
+      badge: 'R&D Prototype',
+      badgeType: 'rd',
+    },
+    {
+      id: 'plans' as AuthPage,
+      title: 'Plans & Subscriptions',
+      desc: 'Transparent advisory and hardware monitoring subscription structures.',
+      icon: CreditCard,
+      badge: 'View Plans',
+      badgeType: 'live',
+    },
+  ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-10">
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-[#0B1B33] via-[#0E223F] to-[#16365B]/70 border border-[#16365B] rounded-2xl p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6 shadow-xl">
-        <div className="space-y-2 max-w-2xl">
-          <div className="inline-flex items-center gap-2 text-xs font-mono uppercase tracking-wider text-[#B9E5FF]">
-            <Sparkles className="w-3.5 h-3.5 text-[#B9E5FF]" />
-            <span>Energy Intelligence & Hardware Platform</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-            Welcome back, <span className="text-[#B9E5FF]">{displayName}</span>
-          </h1>
-          <p className="text-sm text-slate-300 leading-relaxed">
-            Advancing building-level electrical monitoring, cellular telemetry, community energy initiatives, and customized commercial advisory.
-          </p>
-        </div>
-
-        {/* Action Controls */}
-        <div className="flex flex-col sm:flex-row items-start md:items-center gap-3 shrink-0">
-          <button
-            onClick={() => onNavigate('profile')}
-            className="px-4 py-2.5 rounded-lg bg-[#071629] hover:bg-[#16365B] text-xs font-semibold text-slate-200 hover:text-white border border-[#16365B] transition-colors flex items-center gap-2 cursor-pointer shadow-sm"
-          >
-            <span>Edit Profile</span>
-          </button>
-          {onOpenOnboarding && (
-            <button
-              onClick={onOpenOnboarding}
-              className="px-4 py-2.5 rounded-lg bg-[#B9E5FF] hover:bg-white text-[#071629] text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
-            >
-              <span>Platform Guide</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* Main Feature Cards Section */}
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#16365B] pb-4">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2.5">
-              <Layers className="w-5 h-5 text-[#B9E5FF]" />
-              <span>Core Platform Programs</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Explore EnerGuru’s flagship hardware R&D, community electrification initiatives, and commercial advisory services.
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 text-slate-900">
+      
+      {/* 1. WELCOME AREA */}
+      <section className="bg-white border border-slate-200/90 rounded-xl p-5 sm:p-7 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
+          {/* Greeting text */}
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200/70">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+              <span>Electricity Intelligence Workspace</span>
+            </div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Welcome back, <span className="text-emerald-700">{displayName}</span>
+            </h1>
+            <p className="text-sm text-slate-600">
+              Here’s what’s happening with your electricity supply today.
             </p>
           </div>
-          <span className="text-[11px] font-mono text-cyan-300 self-start sm:self-auto bg-cyan-950/60 border border-cyan-800/60 px-2.5 py-1 rounded">
-            Stage 1: Architecture Active
+
+          {/* Quick Actions, Notification Icon & Profile Menu */}
+          <div className="flex items-center gap-2.5 self-start md:self-auto shrink-0">
+            {/* Notification Bell Dropdown Trigger */}
+            <div className="relative" ref={notificationRef}>
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="relative p-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                aria-label="Alerts and notifications"
+                title="View electricity notifications"
+              >
+                <Bell className="w-4 h-4 text-slate-700" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-emerald-600 text-white font-bold text-[10px] flex items-center justify-center shadow-xs">
+                  2
+                </span>
+              </button>
+
+              {/* Notification Popover */}
+              {showNotifications && (
+                <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white border border-slate-200 rounded-xl shadow-lg p-4 z-50 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+                    <div className="flex items-center gap-2">
+                      <Bell className="w-4 h-4 text-emerald-700" />
+                      <span className="text-xs font-bold text-slate-900">Notifications & Alerts</span>
+                    </div>
+                    <span className="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                      Simulated Dispatch
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200/80 text-xs space-y-1">
+                      <div className="flex items-center justify-between font-semibold text-slate-800">
+                        <span className="flex items-center gap-1.5 text-emerald-700">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          <span>Grid Voltage Stable</span>
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-mono">10m ago</span>
+                      </div>
+                      <p className="text-slate-600 text-[11px] leading-relaxed">
+                        Feeder 11kV line voltage measuring 232V (nominal band). No active brownout or surge alerts detected.
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/80 text-xs space-y-1">
+                      <div className="flex items-center justify-between font-semibold text-amber-900">
+                        <span className="flex items-center gap-1.5">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
+                          <span>Maintenance Reminder</span>
+                        </span>
+                        <span className="text-[10px] text-amber-700 font-mono">Yesterday</span>
+                      </div>
+                      <p className="text-amber-800 text-[11px] leading-relaxed">
+                        Generator service interval approaching: 45 operating hours recorded in Equipment Registry.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                    <button
+                      onClick={() => {
+                        setShowNotifications(false);
+                        onNavigate('alerts');
+                      }}
+                      className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline cursor-pointer"
+                    >
+                      View All in Alerts Hub →
+                    </button>
+                    <button
+                      onClick={() => setShowNotifications(false)}
+                      className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Quick Profile Trigger */}
+            <button
+              onClick={() => onNavigate('profile')}
+              className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-medium transition-colors cursor-pointer"
+            >
+              <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-800 font-bold text-[10px] flex items-center justify-center">
+                {initial}
+              </div>
+              <span className="hidden sm:inline">Profile</span>
+            </button>
+
+            {/* Setup Guide / Onboarding Trigger */}
+            {onOpenOnboarding && (
+              <button
+                onClick={onOpenOnboarding}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition-colors shadow-xs cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Setup Guide</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </section>
+
+      {/* 2. ENERGY OVERVIEW (COMPACT SUMMARY CARDS - SIMULATED DEMO DATA) */}
+      <section className="space-y-3">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+          <div>
+            <h2 className="text-sm sm:text-base font-bold text-slate-900 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-700" />
+              <span>Energy Overview</span>
+            </h2>
+            <p className="text-xs text-slate-500">
+              Building electricity readings and daily utility telemetry.
+            </p>
+          </div>
+          <div className="inline-flex items-center gap-1.5 self-start sm:self-auto px-2 py-0.5 rounded bg-amber-50 border border-amber-200 text-[10px] font-mono text-amber-800">
+            <Info className="w-3 h-3 text-amber-600" />
+            <span>SIMULATED DEMO DATA • HARDWARE IN R&D</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Metric 1: Voltage */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4.5 shadow-xs space-y-2 hover:border-emerald-300 transition-colors">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium">Incoming Voltage</span>
+              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                Demo
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">232</span>
+              <span className="text-xs font-semibold text-slate-500">V AC</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-700">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Normal Band (210V – 240V)</span>
+            </div>
+          </div>
+
+          {/* Metric 2: Current Load */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4.5 shadow-xs space-y-2 hover:border-emerald-300 transition-colors">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium">Current Demand</span>
+              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                Demo
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">1.85</span>
+              <span className="text-xs font-semibold text-slate-500">kW</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+              <Gauge className="w-3.5 h-3.5 text-emerald-700" />
+              <span>Active Load • 8.04 Amps (Phase 1)</span>
+            </div>
+          </div>
+
+          {/* Metric 3: Today's Energy Usage */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4.5 shadow-xs space-y-2 hover:border-emerald-300 transition-colors">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium">Today's Consumption</span>
+              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                Demo
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-extrabold text-slate-900 tracking-tight">14.6</span>
+              <span className="text-xs font-semibold text-slate-500">kWh</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-600">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-700" />
+              <span>24h Aggregate • Est. Band A</span>
+            </div>
+          </div>
+
+          {/* Metric 4: Electricity Supply Status */}
+          <div className="bg-white border border-slate-200/90 rounded-xl p-4.5 shadow-xs space-y-2 hover:border-emerald-300 transition-colors">
+            <div className="flex items-center justify-between text-xs text-slate-500">
+              <span className="font-medium">Supply Status</span>
+              <span className="text-[10px] font-mono uppercase px-1.5 py-0.2 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                Demo
+              </span>
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-lg font-bold text-emerald-700 truncate">Grid Active</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-emerald-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span>Mains Supply Online • 50.1 Hz</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 3. POWER STATUS OVERVIEW & QUICK CONTROL PREVIEW (SIDE-BY-SIDE / STACKED) */}
+      <section className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Power Status Overview Panel (7 cols on lg) */}
+        <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div>
+              <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                <Radio className="w-4 h-4 text-emerald-700" />
+                <span>Power Status Overview</span>
+              </h2>
+              <p className="text-xs text-slate-500">
+                Operational status of building electricity and telemetry links.
+              </p>
+            </div>
+            <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+              Diagnostic Feed
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/70 space-y-1">
+              <span className="text-slate-500 block text-[11px]">Electricity Supply Status</span>
+              <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span>Mains Utility Power (Online)</span>
+              </div>
+              <span className="text-[10px] text-slate-500 block">Feeder 11kV Phase Synchronized</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/70 space-y-1">
+              <span className="text-slate-500 block text-[11px]">Smart Connector Hardware Status</span>
+              <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <Cpu className="w-3.5 h-3.5 text-blue-600" />
+                <span>R&D Prototype Standby</span>
+              </div>
+              <span className="text-[10px] text-slate-500 block">Physical unit in engineering lab</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/70 space-y-1">
+              <span className="text-slate-500 block text-[11px]">Last Telemetry Communication</span>
+              <div className="flex items-center gap-2 font-semibold text-slate-900">
+                <Clock className="w-3.5 h-3.5 text-emerald-700" />
+                <span>2 mins ago (Simulated Ping)</span>
+              </div>
+              <span className="text-[10px] text-slate-500 block">Cellular IoT Sandbox Link</span>
+            </div>
+
+            <div className="p-3 rounded-lg bg-slate-50 border border-slate-200/70 space-y-1">
+              <span className="text-slate-500 block text-[11px]">Active Grid Stability Notice</span>
+              <div className="flex items-center gap-2 font-semibold text-emerald-700">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Nominal Line Voltage</span>
+              </div>
+              <span className="text-[10px] text-slate-500 block">No critical over-voltage alerts</span>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg bg-emerald-50/60 border border-emerald-200/70 text-[11px] text-emerald-900 flex items-start gap-2.5">
+            <ShieldCheck className="w-4 h-4 text-emerald-700 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-semibold block text-emerald-950">System Architecture Boundary</span>
+              <p className="text-emerald-800 leading-relaxed">
+                Account authenticated via Supabase. Live electrical measurements and physical telemetry will connect automatically upon licensed Smart Connector installation.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Control Preview (5 cols on lg) */}
+        <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-xl p-5 sm:p-6 shadow-xs flex flex-col justify-between space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <Power className="w-4 h-4 text-emerald-700" />
+                  <span>Power Control Centre Preview</span>
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Remote switching simulation preview.
+                </p>
+              </div>
+              <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                DEMO / SIMULATED
+              </span>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Visual interface demonstration for future building-level circuit switching. Physical switching requires certified hardware interlocks.
+            </p>
+
+            {/* Displayed State Card */}
+            <div className="p-3.5 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <span className="text-xs text-slate-500 font-medium">Displayed State:</span>
+              <div className="flex items-center gap-2">
+                <span className={`w-2.5 h-2.5 rounded-full ${simulatedPowerState === 'ON' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
+                <span className={`text-xs font-bold font-mono ${simulatedPowerState === 'ON' ? 'text-emerald-700' : 'text-slate-600'}`}>
+                  {simulatedPowerState === 'ON' ? 'POWER ON (SIMULATED)' : 'POWER OFF (SIMULATED)'}
+                </span>
+              </div>
+            </div>
+
+            {/* Simulated Action Notice */}
+            {controlActionNotice && (
+              <div className="p-2.5 rounded bg-slate-100 border border-slate-200 text-[11px] text-slate-700 leading-relaxed animate-in fade-in">
+                {controlActionNotice}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3 pt-2">
+            <div className="grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => handleSimulatedSwitch('ON')}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
+                  simulatedPowerState === 'ON'
+                    ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <Power className="w-3.5 h-3.5" />
+                <span>TURN ON</span>
+              </button>
+              <button
+                onClick={() => handleSimulatedSwitch('OFF')}
+                className={`py-2 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs ${
+                  simulatedPowerState === 'OFF'
+                    ? 'bg-rose-600 text-white hover:bg-rose-700'
+                    : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+                }`}
+              >
+                <X className="w-3.5 h-3.5" />
+                <span>TURN OFF</span>
+              </button>
+            </div>
+
+            <div className="text-[10px] text-slate-400 text-center font-mono">
+              Strictly a visual demonstration. Does not control physical electrical circuits.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 4. DASHBOARD NAVIGATION SECTIONS (13 COMPACT BUTTON-LIKE CARDS) */}
+      <section className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200/80 pb-3">
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+              <Zap className="w-4 h-4 text-emerald-700" />
+              <span>Dashboard Navigation Modules</span>
+            </h2>
+            <p className="text-xs text-slate-500">
+              Access active platform tools, commercial requests, engineering specs, and developmental workspaces.
+            </p>
+          </div>
+          <span className="text-[11px] font-mono text-slate-500 self-start sm:self-auto">
+            13 Platform Sections
           </span>
         </div>
 
-        {/* EXACTLY THREE PRIMARY FEATURE CARDS */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8 items-stretch">
-          
-          {/* CARD 1: HARDWARE CONNECTOR R&D */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-2xl overflow-hidden flex flex-col justify-between hover:border-[#B9E5FF]/60 transition-all duration-200 shadow-lg group">
-            <div>
-              {/* Image Above Title */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#071629] border-b border-[#16365B]">
-                <img
-                  src="/images/energuru/connector-rd.jpg"
-                  alt="EnerGuru Smart Hardware Connector Prototype in Engineering Lab"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider bg-[#071629]/90 text-[#B9E5FF] border border-[#B9E5FF]/40 backdrop-blur-sm">
-                    Flagship R&D
-                  </span>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-amber-950/90 text-amber-300 border border-amber-700/60 backdrop-blur-sm">
-                    Demo / Simulated
-                  </span>
-                </div>
-              </div>
+        {/* 13 Compact, Button-like Cards Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 items-stretch">
+          {navigationSections.map((sec) => {
+            const Icon = sec.icon;
+            const isCurrent = sec.id === 'dashboard';
 
-              {/* Card Body */}
-              <div className="p-6 space-y-3.5">
-                <div className="flex items-center gap-2 text-xs text-[#B9E5FF] font-medium">
-                  <Cpu className="w-4 h-4 shrink-0" />
-                  <span>Hardware Engineering</span>
-                </div>
+            // Badge styling
+            const badgeClasses = {
+              live: 'bg-emerald-50 text-emerald-800 border-emerald-200/80',
+              planned: 'bg-slate-100 text-slate-700 border-slate-200',
+              framework: 'bg-blue-50 text-blue-800 border-blue-200/80',
+              rd: 'bg-purple-50 text-purple-800 border-purple-200/80',
+              active: 'bg-emerald-600 text-white border-emerald-600 font-bold',
+            }[sec.badgeType] || 'bg-slate-100 text-slate-700 border-slate-200';
 
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                  Hardware Connector R&D
-                </h3>
-
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  EnerGuru’s flagship product in active development: building-level incoming electricity monitoring and, in the future, authorized remote control through a professionally engineered smart connector.
-                </p>
-
-                <div className="pt-2 border-t border-[#16365B]/50 space-y-2 text-[11px] text-slate-400">
-                  <div className="flex items-start gap-2">
-                    <Radio className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0 mt-0.5" />
-                    <span>Independent cellular IoT connectivity for outage and restoration alerts without domestic Wi-Fi dependency.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Activity className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0 mt-0.5" />
-                    <span>Line voltage, brownout, and surge diagnostics with future safety-interlocked remote switching when physical hardware and certifications complete.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-6 pt-0 space-y-2.5">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => onNavigate('connector')}
-                  className="flex-1 py-2.5 px-3 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <span>Explore Connector R&D</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onNavigate('connect-device')}
-                  className="py-2.5 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                  title="Simulated hardware pairing sandbox"
-                >
-                  <span>Pairing Demo</span>
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-500 text-center font-mono">
-                Hardware is in R&D stage. Readings are simulated demos.
-              </p>
-            </div>
-          </div>
-
-          {/* CARD 2: COMMUNITY ENERGY */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-2xl overflow-hidden flex flex-col justify-between hover:border-[#B9E5FF]/60 transition-all duration-200 shadow-lg group">
-            <div>
-              {/* Image Above Title */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#071629] border-b border-[#16365B]">
-                <img
-                  src="/images/energuru/community-energy.jpg"
-                  alt="Community Solar and Microgrid Installation at Healthcare Facility"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider bg-[#071629]/90 text-[#B9E5FF] border border-[#B9E5FF]/40 backdrop-blur-sm">
-                    Access & Participation
-                  </span>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-blue-950/90 text-cyan-300 border border-cyan-800/60 backdrop-blur-sm">
-                    Framework Preview
-                  </span>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-6 space-y-3.5">
-                <div className="flex items-center gap-2 text-xs text-[#B9E5FF] font-medium">
-                  <Users className="w-4 h-4 shrink-0" />
-                  <span>Public & Social Impact</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                  Community Energy
-                </h3>
-
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  A transparent framework for future community electricity-access projects, project proposals, funding opportunities, citizen participation, and verified project progress.
-                </p>
-
-                <div className="pt-2 border-t border-[#16365B]/50 space-y-2 text-[11px] text-slate-400">
-                  <div className="flex items-start gap-2">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                    <span>Clear separation between proposed, under-development, funded, and commissioned solar facilities.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0 mt-0.5" />
-                    <span>Rigorous engineering audits for unpowered rural clinics, schools, and agricultural cold-storage hubs.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-6 pt-0 space-y-2.5">
+            return (
               <button
-                onClick={() => onNavigate('community-funding')}
-                className="w-full py-2.5 px-3 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                key={sec.id}
+                onClick={() => onNavigate(sec.id)}
+                className={`text-left bg-white border rounded-xl p-4 flex flex-col justify-between transition-all duration-150 cursor-pointer group shadow-xs hover:shadow-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/40 ${
+                  isCurrent 
+                    ? 'border-emerald-500/80 bg-emerald-50/20' 
+                    : 'border-slate-200/90 hover:border-emerald-500/60 hover:bg-slate-50/60'
+                }`}
               >
-                <span>Explore Community Initiatives</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <div className="space-y-2.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-200/70 text-emerald-700 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${badgeClasses}`}>
+                      {sec.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-emerald-700 transition-colors flex items-center gap-1">
+                      <span>{sec.title}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 group-hover:translate-x-0.5 transition-all" />
+                    </h3>
+                    <p className="text-[11px] text-slate-500 leading-relaxed mt-1 line-clamp-2">
+                      {sec.desc}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3 mt-2 border-t border-slate-100 text-[11px] font-semibold text-emerald-700 flex items-center justify-between">
+                  <span>Open Section</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                </div>
               </button>
-              <p className="text-[10px] text-slate-500 text-center font-mono">
-                Concept framework. No active commercial solicitation.
-              </p>
-            </div>
-          </div>
-
-          {/* CARD 3: COMMERCIAL & ADVISORY SERVICES */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-2xl overflow-hidden flex flex-col justify-between hover:border-[#B9E5FF]/60 transition-all duration-200 shadow-lg group">
-            <div>
-              {/* Image Above Title */}
-              <div className="relative aspect-[16/9] w-full overflow-hidden bg-[#071629] border-b border-[#16365B]">
-                <img
-                  src="/images/energuru/commercial-advisory.jpg"
-                  alt="Professional Energy Engineer Presenting Commercial Power Solutions"
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  loading="lazy"
-                />
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded text-[10px] font-mono uppercase tracking-wider bg-[#071629]/90 text-[#B9E5FF] border border-[#B9E5FF]/40 backdrop-blur-sm">
-                    Client Solutions
-                  </span>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span className="px-2 py-0.5 rounded text-[10px] font-mono uppercase bg-emerald-950/90 text-emerald-300 border border-emerald-800/60 backdrop-blur-sm">
-                    Open for Enquiries
-                  </span>
-                </div>
-              </div>
-
-              {/* Card Body */}
-              <div className="p-6 space-y-3.5">
-                <div className="flex items-center gap-2 text-xs text-[#B9E5FF] font-medium">
-                  <Briefcase className="w-4 h-4 shrink-0" />
-                  <span>Commercial & Enterprise</span>
-                </div>
-
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                  Commercial & Advisory Services
-                </h3>
-
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  Tailored electrical engineering consultations, business energy assessments, subscription plan structures, and custom commercial energy requests for Nigerian facilities.
-                </p>
-
-                <div className="pt-2 border-t border-[#16365B]/50 space-y-2 text-[11px] text-slate-400">
-                  <div className="flex items-start gap-2">
-                    <FileText className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0 mt-0.5" />
-                    <span>Interactive quotation workflow for residential, hospitality, health clinics, and industrial properties.</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0 mt-0.5" />
-                    <span>Transparent subscription and advisory tiers designed for predictable backup power economics.</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="p-6 pt-0 space-y-2.5">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <button
-                  onClick={() => onNavigate('get-quote')}
-                  className="flex-1 py-2.5 px-3 rounded-lg bg-[#B9E5FF] hover:bg-white text-[#071629] text-xs font-bold transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
-                >
-                  <span>Request a Quote</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onNavigate('plans')}
-                  className="py-2.5 px-3 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white border border-[#16365B] text-xs font-semibold transition-colors flex items-center justify-center gap-1 cursor-pointer"
-                >
-                  <span>View Plans</span>
-                </button>
-              </div>
-              <p className="text-[10px] text-slate-500 text-center font-mono">
-                Direct consultation requests. Non-binding advisory.
-              </p>
-            </div>
-          </div>
+            );
+          })}
         </div>
+      </section>
 
-        {/* SECONDARY FEATURE: EQUIPMENT REGISTRY & MAINTENANCE LOGBOOK (VISIBLY LESS PROMINENT) */}
-        <div className="mt-8 bg-[#0B1B33]/60 border border-[#16365B] rounded-xl p-5 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 transition-colors hover:border-[#16365B]/90">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-[#071629] border border-[#16365B] text-slate-400 flex items-center justify-center shrink-0 mt-0.5">
-              <Wrench className="w-5 h-5 text-slate-400" />
-            </div>
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm sm:text-base font-bold text-white">
-                  Equipment Registry & Maintenance Logbook
-                </h4>
-                <span className="text-[10px] font-mono uppercase px-2 py-0.5 rounded bg-[#071629] text-slate-400 border border-[#16365B]">
-                  Planned • Coming Later
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
-                A future workspace for tracking energy equipment, service history, and maintenance activities.
-              </p>
-            </div>
-          </div>
-
-          <div className="shrink-0 self-stretch sm:self-auto flex items-center gap-3">
-            <button
-              onClick={() => onNavigate('equipment')}
-              className="w-full sm:w-auto px-4 py-2 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 hover:text-white text-xs font-semibold border border-[#16365B] transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-            >
-              <span>Explore Preview</span>
-              <ArrowRight className="w-3.5 h-3.5 text-slate-400" />
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* 5. FOOTER ARCHITECTURAL NOTE */}
+      <footer className="pt-4 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <p>
+          EnerGuru Platform • Building Electricity Intelligence & Hardware Innovation
+        </p>
+        <p className="font-mono text-[11px] text-slate-400">
+          Supabase Connected • Simulated Telemetry Engine Active
+        </p>
+      </footer>
     </div>
   );
 };
