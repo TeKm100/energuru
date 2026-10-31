@@ -12,7 +12,14 @@ export type PublicPage =
   | 'get-quote';
 
 export type AuthPage = 
-  | 'dashboard' 
+  | 'dashboard'
+  // Navigation Groups
+  | 'energy-management'
+  | 'devices-operations'
+  | 'business-enterprise'
+  | 'community-impact'
+  | 'account-plans'
+  // Features & Modules
   | 'equipment'
   | 'energy-costs'
   | 'outage-prep'

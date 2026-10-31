@@ -37,6 +37,8 @@ import { BuyConnectorPage } from './pages/BuyConnectorPage';
 import { GetQuotePage } from './pages/GetQuotePage';
 import { PlansPage } from './pages/PlansPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
+import { EnergyMonitoringPage } from './pages/EnergyMonitoringPage';
+import { GroupLandingPage } from './pages/GroupLandingPage';
 
 import { Loader2 } from 'lucide-react';
 
@@ -318,6 +320,11 @@ export default function App() {
     const authCurrentPage = (
       [
         'dashboard', 
+        'energy-management',
+        'devices-operations',
+        'business-enterprise',
+        'community-impact',
+        'account-plans',
         'equipment', 
         'energy-costs', 
         'outage-prep', 
@@ -339,17 +346,8 @@ export default function App() {
         : 'dashboard'
     ) as AuthPage;
 
-    const isLightPage = [
-      'dashboard',
-      'energy-monitoring',
-      'power-control',
-      'alerts',
-      'ai-intelligence',
-      'connector-management'
-    ].includes(currentPage);
-
     return (
-      <div className={`min-h-screen ${isLightPage ? 'bg-[#F8FAFC] text-slate-900' : 'bg-[#071629] text-white'} flex flex-col font-sans selection:bg-emerald-600 selection:text-white transition-colors`}>
+      <div className="min-h-screen bg-[#071629] text-white flex flex-col font-sans selection:bg-[#B9E5FF] selection:text-[#071629]">
         {/* Authenticated Navigation Bar */}
         <AuthNavbar
           currentPage={authCurrentPage}
@@ -362,6 +360,11 @@ export default function App() {
         {/* Authenticated Page Content */}
         <main className="flex-1 pb-16">
           {(![
+            'energy-management',
+            'devices-operations',
+            'business-enterprise',
+            'community-impact',
+            'account-plans',
             'equipment',
             'energy-costs',
             'outage-prep',
@@ -390,8 +393,27 @@ export default function App() {
             />
           )}
 
+          {/* Group Landing Pages */}
           {[
-            'energy-monitoring',
+            'energy-management',
+            'devices-operations',
+            'business-enterprise',
+            'community-impact',
+            'account-plans'
+          ].includes(currentPage) && (
+            <GroupLandingPage
+              groupId={currentPage as AuthPage}
+              onNavigate={handleNavigate}
+            />
+          )}
+
+          {/* Full Energy Monitoring & Analytics Module */}
+          {currentPage === 'energy-monitoring' && (
+            <EnergyMonitoringPage onNavigate={handleNavigate} />
+          )}
+
+          {/* Upcoming In-Development Modules */}
+          {[
             'power-control',
             'alerts',
             'ai-intelligence',
