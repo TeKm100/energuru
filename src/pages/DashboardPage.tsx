@@ -176,7 +176,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <span className="text-xs font-bold text-white">Notifications & Alerts</span>
                     </div>
                     <span className="text-[10px] font-mono text-[#B9E5FF] bg-[#16365B] px-2 py-0.5 rounded border border-[#B9E5FF]/20">
-                      Simulated Dispatch
+                      Simulated Examples
                     </span>
                   </div>
 
@@ -185,12 +185,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <div className="flex items-center justify-between font-semibold text-white">
                         <span className="flex items-center gap-1.5 text-emerald-400">
                           <CheckCircle2 className="w-3.5 h-3.5" />
-                          <span>Grid Voltage Stable</span>
+                          <span>Simulated Example: Grid Voltage Stable</span>
                         </span>
                         <span className="text-[10px] text-slate-400 font-mono">10m ago</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        Feeder 11kV line voltage measuring 232V (nominal band). No active brownout or surge alerts detected.
+                        Illustrative demo notification: Feeder 11kV line voltage measuring 232V (nominal band). No active brownout or surge alerts detected.
                       </p>
                     </div>
 
@@ -198,12 +198,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <div className="flex items-center justify-between font-semibold text-amber-300">
                         <span className="flex items-center gap-1.5">
                           <AlertTriangle className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Maintenance Reminder</span>
+                          <span>Simulated Example: Maintenance Reminder</span>
                         </span>
                         <span className="text-[10px] text-amber-400 font-mono">Yesterday</span>
                       </div>
                       <p className="text-slate-300 text-[11px] leading-relaxed">
-                        Generator service interval approaching: 45 operating hours recorded in Equipment Registry.
+                        Illustrative demo notification: Generator service interval approaching: 45 operating hours recorded in Equipment Registry.
                       </p>
                     </div>
                   </div>

@@ -193,13 +193,28 @@ export default function App() {
         // If logged out while viewing a protected page, return to home
         setCurrentPage((prev) => {
           const protectedPages: Page[] = [
-            'dashboard', 
-            'profile', 
-            'settings', 
-            'equipment', 
-            'energy-costs', 
-            'outage-prep', 
-            'connect-device'
+            'dashboard',
+            'energy-management',
+            'devices-operations',
+            'business-enterprise',
+            'community-impact',
+            'account-plans',
+            'energy-monitoring',
+            'power-control',
+            'alerts',
+            'ai-intelligence',
+            'connector-management',
+            'equipment',
+            'energy-costs',
+            'outage-prep',
+            'community-funding',
+            'connector',
+            'connect-device',
+            'buy-connector',
+            'get-quote',
+            'plans',
+            'profile',
+            'settings',
           ];
           return protectedPages.includes(prev) ? 'home' : prev;
         });
@@ -215,13 +230,28 @@ export default function App() {
   // Handle navigation
   const handleNavigate = (page: Page) => {
     const protectedPages: Page[] = [
-      'dashboard', 
-      'profile', 
-      'settings', 
-      'equipment', 
-      'energy-costs', 
-      'outage-prep', 
-      'connect-device'
+      'dashboard',
+      'energy-management',
+      'devices-operations',
+      'business-enterprise',
+      'community-impact',
+      'account-plans',
+      'energy-monitoring',
+      'power-control',
+      'alerts',
+      'ai-intelligence',
+      'connector-management',
+      'equipment',
+      'energy-costs',
+      'outage-prep',
+      'community-funding',
+      'connector',
+      'connect-device',
+      'buy-connector',
+      'get-quote',
+      'plans',
+      'profile',
+      'settings',
     ];
 
     if (userSession && !isPasswordRecoveryMode && currentPage !== 'reset-password') {

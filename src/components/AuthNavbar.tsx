@@ -27,7 +27,8 @@ import {
   LineChart,
   Cpu,
   Radio,
-  Sparkles
+  Sparkles,
+  ShoppingBag
 } from 'lucide-react';
 
 interface AuthNavbarProps {
@@ -88,7 +89,8 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
       items: [
         { id: 'equipment', label: 'Equipment Registry & Logs', icon: Wrench },
         { id: 'outage-prep', label: 'Outage Prep Checklists', icon: ShieldAlert },
-        { id: 'connector', label: 'Hardware Connector R&D', icon: Cpu },
+        { id: 'connector', label: 'Hardware Connector R&D & Engineering', icon: Cpu },
+        { id: 'buy-connector', label: 'Buy Connector Packages', icon: ShoppingBag },
         { id: 'connect-device', label: 'Device Pairing Sandbox', icon: Radio },
       ],
     },
@@ -99,7 +101,6 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
       items: [
         { id: 'get-quote', label: 'Request a Quote / Advisory', badge: 'Active', icon: Briefcase },
         { id: 'energy-costs', label: 'Cost & Energy Reports', icon: LineChart },
-        { id: 'plans', label: 'Plans & Subscriptions', icon: CreditCard },
       ],
     },
     {

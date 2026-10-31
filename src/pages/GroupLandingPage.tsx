@@ -23,7 +23,8 @@ import {
   Sparkles,
   Layers,
   Radio,
-  Clock
+  Clock,
+  ShoppingBag
 } from 'lucide-react';
 
 interface GroupLandingPageProps {
@@ -121,11 +122,19 @@ const GROUPS_CONFIG: Record<string, GroupMetadata> = {
       },
       {
         id: 'connector',
-        title: 'Hardware Connector R&D',
+        title: 'Hardware Connector R&D & Engineering',
         desc: 'DIN-rail smart electricity connector architecture, cellular IoT telemetry, and line voltage monitoring specs.',
         icon: Cpu,
         badge: 'R&D Prototype',
         badgeType: 'rd',
+      },
+      {
+        id: 'buy-connector',
+        title: 'Buy Connector Packages',
+        desc: 'Reserve hardware pre-order packages, review electrical installation kit specifications, and explore tier inclusions.',
+        icon: ShoppingBag,
+        badge: 'Pre-Order Specs',
+        badgeType: 'interactive',
       },
       {
         id: 'connect-device',
@@ -158,14 +167,6 @@ const GROUPS_CONFIG: Record<string, GroupMetadata> = {
         icon: LineChart,
         badge: 'Interactive Tool',
         badgeType: 'interactive',
-      },
-      {
-        id: 'plans',
-        title: 'Advisory & Subscription Plans',
-        desc: 'Transparent pricing tiers for ongoing energy intelligence, priority engineering support, and hardware monitoring.',
-        icon: CreditCard,
-        badge: 'View Plans',
-        badgeType: 'live',
       },
     ],
   },
