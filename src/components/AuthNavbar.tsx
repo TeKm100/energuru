@@ -72,7 +72,7 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
   const navGroups: NavGroup[] = [
     {
       id: 'energy-management',
-      label: 'Energy Management',
+      label: 'Energy & Power',
       icon: Activity,
       items: [
         { id: 'energy-monitoring', label: 'Energy Monitoring & Analytics', badge: 'Live', icon: Activity },

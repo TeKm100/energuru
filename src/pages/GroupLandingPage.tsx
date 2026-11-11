@@ -51,7 +51,7 @@ interface GroupMetadata {
 
 const GROUPS_CONFIG: Record<string, GroupMetadata> = {
   'energy-management': {
-    title: 'Energy Management',
+    title: 'Energy & Power',
     category: 'System Telemetry & Controls',
     tagline: 'Real-time building electricity telemetry, remote switching simulation, outage dispatch, and predictive load intelligence.',
     icon: Activity,
