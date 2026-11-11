@@ -4,8 +4,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Page, PublicPage, AuthPage, InfoModalType, UserProfile } from './types';
+import { Page, PublicPage, AuthPage, InfoModalType, UserProfile, AppNotification } from './types';
 import { supabase, isSupabaseConfigured, extractAuthCallbackParams, cleanAuthUrlParams } from './lib/supabase';
+import { fetchUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from './lib/notifications';
 import { Navbar } from './components/Navbar';
 import { AuthNavbar } from './components/AuthNavbar';
 import { Footer } from './components/Footer';
@@ -39,6 +40,7 @@ import { PlansPage } from './pages/PlansPage';
 import { ModulePlaceholderPage } from './pages/ModulePlaceholderPage';
 import { EnergyMonitoringPage } from './pages/EnergyMonitoringPage';
 import { GroupLandingPage } from './pages/GroupLandingPage';
+import { NotificationsPage } from './pages/NotificationsPage';
 
 import { Loader2 } from 'lucide-react';
 
@@ -49,6 +51,7 @@ export default function App() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isInitialSessionLoading, setIsInitialSessionLoading] = useState(true);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [authNotice, setAuthNotice] = useState<{
     type: 'success' | 'error' | 'info';
     text: string;
@@ -72,6 +75,16 @@ export default function App() {
       }
     } catch (err) {
       console.warn('Could not retrieve user profile from database:', err);
+    }
+  }, []);
+
+  // Fetch user notifications from Supabase / notification service
+  const loadNotifications = useCallback(async (userId: string) => {
+    try {
+      const data = await fetchUserNotifications(userId);
+      setNotifications(data);
+    } catch (err) {
+      console.warn('Could not retrieve notifications:', err);
     }
   }, []);
 
@@ -146,6 +159,7 @@ export default function App() {
 
       if (session?.user) {
         fetchUserProfile(session.user.id);
+        loadNotifications(session.user.id);
         // Only navigate to dashboard if NOT in recovery flow and NOT already on reset-password
         if (!isPasswordRecoveryMode && callbackParams.type !== 'recovery' && !callbackParams.errorCode) {
           setCurrentPage('dashboard');
@@ -171,6 +185,7 @@ export default function App() {
 
       if (session?.user) {
         await fetchUserProfile(session.user.id);
+        await loadNotifications(session.user.id);
         if (event === 'SIGNED_IN') {
           if (isPasswordRecoveryMode) {
             setCurrentPage('reset-password');
@@ -215,6 +230,7 @@ export default function App() {
             'plans',
             'profile',
             'settings',
+            'notifications',
           ];
           return protectedPages.includes(prev) ? 'home' : prev;
         });
@@ -252,6 +268,7 @@ export default function App() {
       'plans',
       'profile',
       'settings',
+      'notifications',
     ];
 
     if (userSession && !isPasswordRecoveryMode && currentPage !== 'reset-password') {
@@ -278,6 +295,7 @@ export default function App() {
     setIsPasswordRecoveryMode(false);
     setRecoveryError(null);
     setShowOnboarding(false);
+    setNotifications([]);
     setCurrentPage('home');
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
@@ -370,7 +388,8 @@ export default function App() {
         'power-control',
         'alerts',
         'ai-intelligence',
-        'connector-management'
+        'connector-management',
+        'notifications'
       ].includes(currentPage)
         ? currentPage
         : 'dashboard'
@@ -385,6 +404,21 @@ export default function App() {
           onSignOut={handleSignOut}
           displayName={displayName}
           userEmail={userSession.user?.email || ''}
+          notifications={notifications}
+          onMarkNotificationAsRead={async (id) => {
+            if (!userSession?.user) return;
+            setNotifications((prev) =>
+              prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+            );
+            await markNotificationAsRead(userSession.user.id, id);
+          }}
+          onMarkAllNotificationsAsRead={async () => {
+            if (!userSession?.user) return;
+            setNotifications((prev) =>
+              prev.map((n) => ({ ...n, is_read: true }))
+            );
+            await markAllNotificationsAsRead(userSession.user.id);
+          }}
         />
 
         {/* Authenticated Page Content */}
@@ -413,13 +447,13 @@ export default function App() {
             'power-control',
             'alerts',
             'ai-intelligence',
-            'connector-management'
+            'connector-management',
+            'notifications'
           ].includes(currentPage) || currentPage === 'dashboard') && (
             <DashboardPage
               userProfile={userProfile}
               userEmail={userSession.user?.email || null}
               onNavigate={(p) => handleNavigate(p)}
-              onOpenOnboarding={() => setShowOnboarding(true)}
             />
           )}
 
@@ -511,6 +545,28 @@ export default function App() {
               userEmail={userSession.user?.email || null}
               onNavigate={(p) => handleNavigate(p)}
               onSignOut={handleSignOut}
+              onOpenOnboarding={() => setShowOnboarding(true)}
+            />
+          )}
+
+          {currentPage === 'notifications' && (
+            <NotificationsPage
+              notifications={notifications}
+              onNavigate={handleNavigate}
+              onMarkAsRead={async (id) => {
+                if (!userSession?.user) return;
+                setNotifications((prev) =>
+                  prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+                );
+                await markNotificationAsRead(userSession.user.id, id);
+              }}
+              onMarkAllAsRead={async () => {
+                if (!userSession?.user) return;
+                setNotifications((prev) =>
+                  prev.map((n) => ({ ...n, is_read: true }))
+                );
+                await markAllNotificationsAsRead(userSession.user.id);
+              }}
             />
           )}
 

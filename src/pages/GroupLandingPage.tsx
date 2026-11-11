@@ -290,6 +290,36 @@ export const GroupLandingPage: React.FC<GroupLandingPageProps> = ({ groupId, onN
         </div>
       </div>
 
+      {/* Compact Device Status Item for Devices & Operations Workspace */}
+      {groupId === 'devices-operations' && (
+        <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-[#071629] border border-[#16365B] text-[#B9E5FF] flex items-center justify-center shrink-0">
+              <Radio className="w-4 h-4 text-[#B9E5FF]" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-white text-xs">Demo Smart Connector Profile</span>
+                <span className="text-[10px] font-mono uppercase bg-amber-950/70 text-amber-300 border border-amber-800/80 px-1.5 py-0.2 rounded">
+                  Prototype Sandbox
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300">
+                Target Architecture: DIN-Rail Concept • Simulated Connection (Cellular IoT Target)
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 self-start sm:self-auto shrink-0">
+            <button
+              onClick={() => onNavigate('connect-device')}
+              className="px-3 py-1.5 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-[11px] font-semibold text-white transition-colors cursor-pointer"
+            >
+              Device Pairing Sandbox →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Feature Cards Grid */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">

@@ -12,19 +12,22 @@ import {
   LogOut, 
   ArrowLeft,
   Bell,
-  Smartphone
+  Smartphone,
+  Sparkles
 } from 'lucide-react';
 
 interface SettingsPageProps {
   userEmail: string | null;
   onNavigate: (page: AuthPage) => void;
   onSignOut: () => Promise<void>;
+  onOpenOnboarding?: () => void;
 }
 
 export const SettingsPage: React.FC<SettingsPageProps> = ({
   userEmail,
   onNavigate,
   onSignOut,
+  onOpenOnboarding,
 }) => {
   const [isResetting, setIsResetting] = useState(false);
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
@@ -199,6 +202,28 @@ export const SettingsPage: React.FC<SettingsPageProps> = ({
               </p>
             </div>
           </div>
+        </div>
+
+        {/* Platform Onboarding & Setup Guide Section */}
+        <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#B9E5FF]" />
+              <h3 className="text-sm font-semibold text-white">Platform Onboarding & Setup Guide</h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              Revisit the step-by-step account onboarding and product walkthrough anytime.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onOpenOnboarding}
+            className="px-4 py-2 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors cursor-pointer w-fit flex items-center gap-2 shrink-0 shadow-xs"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Launch Setup Guide</span>
+          </button>
         </div>
 
         {/* Session & Sign Out Section */}
