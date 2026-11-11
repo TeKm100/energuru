@@ -17,7 +17,9 @@ import {
   Layers,
   Loader2,
   Check,
-  X
+  X,
+  Zap,
+  Sliders
 } from 'lucide-react';
 
 interface DashboardPageProps {
@@ -82,8 +84,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       setPendingTargetState(null);
       setCommandFeedback(
         targetAction === 'ON'
-          ? 'Simulated State Updated: Supply state set to ON in prototype sandbox. (Note: No physical contactor connected).'
-          : 'Simulated State Updated: Supply state set to ISOLATED in prototype sandbox. (Note: No physical contactor connected).'
+          ? 'State Updated: Supply ON in demo sandbox. (No physical contactor connected).'
+          : 'State Updated: Supply ISOLATED in demo sandbox. (No physical contactor connected).'
       );
 
       // Auto-clear feedback after 6 seconds
@@ -98,92 +100,96 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const simulatedVoltage = isElectricityAvailable ? '~230' : '0';
   const simulatedSource = isElectricityAvailable ? 'Public Grid (Demo)' : 'No Active Feed (Demo)';
 
-  // Compact customer workspaces navigation directory
+  // Compact customer workspaces navigation directory (5 dedicated sections)
   const customerSections = [
     {
       id: 'energy-management' as AuthPage,
       title: 'Energy & Power',
-      desc: 'Consumption trends, voltage history & tariff reports.',
+      desc: 'Telemetry, load profiles & tariffs',
       icon: Activity,
     },
     {
       id: 'devices-operations' as AuthPage,
       title: 'Devices & Operations',
-      desc: 'Smart Connector concepts, equipment registry & runbooks.',
+      desc: 'Connector concepts & equipment logs',
       icon: Wrench,
     },
     {
       id: 'business-enterprise' as AuthPage,
       title: 'Business & Enterprise',
-      desc: 'Facility solutions, site audits & commercial quote requests.',
+      desc: 'Advisory audits & quote requests',
       icon: Briefcase,
     },
     {
       id: 'community-impact' as AuthPage,
       title: 'Community & Impact',
-      desc: 'Solar microgrid electrification for rural clinics & schools.',
+      desc: 'Rural clinic & school solar initiatives',
       icon: Users,
     },
     {
       id: 'account-plans' as AuthPage,
       title: 'Account & Plans',
-      desc: 'Personal profile, security credentials & subscription tiers.',
+      desc: 'Profile credentials & subscriptions',
       icon: User,
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 sm:py-5 space-y-4 text-white">
+    <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-3.5 text-white">
       
-      {/* 1. COMPACT WELCOME HEADING (FOCUSED ON USER'S NAME DYNAMICALLY) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#16365B]/60 pb-3">
-        <div className="flex items-center gap-2.5">
-          <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+      {/* 1. COMPACT WELCOME HEADER */}
+      <div className="flex items-center justify-between gap-2 border-b border-[#16365B]/60 pb-2">
+        <div className="flex items-center gap-2">
+          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
             Welcome, <span className="text-[#B9E5FF]">{userFirstName}</span>
           </h1>
-          <span className="text-[10px] font-mono uppercase bg-amber-950/60 text-amber-300 border border-amber-800/80 px-2 py-0.5 rounded">
-            Prototype Simulation
+          <span className="text-[9px] font-mono uppercase bg-amber-950/60 text-amber-300 border border-amber-800/80 px-1.5 py-0.2 rounded shrink-0">
+            Prototype Demo
           </span>
         </div>
-        <div className="text-[11px] text-slate-400">
-          Building Electricity Management & Telemetry Preview
+        <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden xs:block sm:block">
+          Electricity Telemetry & Controls
         </div>
       </div>
 
-      {/* 2. FOUR PRIMARY ELECTRICITY INFORMATION CARDS (COMPACT & FOCUSED) */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">
+      {/* 2. FOUR PRIMARY ELECTRICITY INDICATORS (2 COLUMNS ON MOBILE, 4 ON DESKTOP) */}
+      <section className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs px-0.5">
+          <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px] sm:text-[11px]">
             Electricity Status Overview
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">
-            Simulated Demo Data
+          <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono">
+            Simulated 2x2 Grid
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Responsive Grid: 2 columns on Mobile & Tablet, 4 columns on Desktop */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+          
           {/* Card 1: Electricity Supply Status */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 space-y-2 hover:border-[#B9E5FF]/40 transition-colors shadow-xs flex flex-col justify-between">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-medium text-slate-300 text-[11px]">1. Electricity Supply</span>
-                <span className="text-[10px] font-mono text-slate-400">Mains</span>
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+                <span className="font-medium text-slate-300 truncate">1. Supply Status</span>
+                <span className="text-[9px] font-mono text-slate-400">Mains</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className={`text-lg sm:text-xl font-bold tracking-tight ${isElectricityAvailable ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <div className="flex items-baseline gap-1">
+                <span className={`text-xs sm:text-sm md:text-base font-bold tracking-tight truncate ${
+                  isElectricityAvailable ? 'text-emerald-400' : 'text-rose-400'
+                }`}>
                   {isElectricityAvailable ? 'Supply Active (Demo)' : 'Supply Inactive (Demo)'}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-300 pt-1.5 border-t border-[#16365B]/60">
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
               {isElectricityAvailable ? (
                 <>
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
                   <span className="truncate">Circuits receiving power</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                  <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
                   <span className="truncate">Supply isolated in demo</span>
                 </>
               )}
@@ -191,21 +197,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           {/* Card 2: Voltage Monitoring */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 space-y-2 hover:border-[#B9E5FF]/40 transition-colors shadow-xs flex flex-col justify-between">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-medium text-slate-300 text-[11px]">2. Voltage Monitoring</span>
-                <span className="text-[10px] font-mono text-slate-400">Line</span>
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+                <span className="font-medium text-slate-300 truncate">2. Voltage Reading</span>
+                <span className="text-[9px] font-mono text-slate-400">Line</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg sm:text-xl font-bold text-white tracking-tight">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs sm:text-sm md:text-base font-bold text-white tracking-tight">
                   {simulatedVoltage}
                 </span>
-                <span className="text-xs font-semibold text-slate-400">V AC (Demo)</span>
+                <span className="text-[10px] font-semibold text-slate-400">V AC (Demo)</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-300 pt-1.5 border-t border-[#16365B]/60">
-              <Info className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0" />
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
+              <Info className="w-3 h-3 text-[#B9E5FF] shrink-0" />
               <span className="truncate">
                 {isElectricityAvailable ? 'Nominal band ~210–240V' : '0V (Isolated line)'}
               </span>
@@ -213,60 +219,60 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           </div>
 
           {/* Card 3: Detected Power Source */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 space-y-2 hover:border-[#B9E5FF]/40 transition-colors shadow-xs flex flex-col justify-between">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-medium text-slate-300 text-[11px]">3. Power Source</span>
-                <span className="text-[10px] font-mono text-slate-400">Feed</span>
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+                <span className="font-medium text-slate-300 truncate">3. Power Source</span>
+                <span className="text-[9px] font-mono text-slate-400">Feed</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg sm:text-xl font-bold text-[#B9E5FF] tracking-tight truncate">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs sm:text-sm md:text-base font-bold text-[#B9E5FF] tracking-tight truncate">
                   {simulatedSource}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-300 pt-1.5 border-t border-[#16365B]/60">
-              <Activity className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0" />
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
+              <Activity className="w-3 h-3 text-[#B9E5FF] shrink-0" />
               <span className="truncate">Simulated grid feed profile</span>
             </div>
           </div>
 
           {/* Card 4: Electrical Protection Status */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 space-y-2 hover:border-[#B9E5FF]/40 transition-colors shadow-xs flex flex-col justify-between">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
             <div className="space-y-1">
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-medium text-slate-300 text-[11px]">4. Electrical Protection</span>
-                <span className="text-[10px] font-mono text-amber-300">R&D</span>
+              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+                <span className="font-medium text-slate-300 truncate">4. Protection</span>
+                <span className="text-[9px] font-mono text-amber-300">R&D</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-base sm:text-lg font-bold text-amber-300 tracking-tight">
+              <div className="flex items-baseline gap-1">
+                <span className="text-xs sm:text-sm md:text-base font-bold text-amber-300 tracking-tight truncate">
                   Prototype Sandbox
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-300 pt-1.5 border-t border-[#16365B]/60">
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
+              <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
               <span className="truncate">Pending hardware validation</span>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 3. OPTIONAL ENERGY CONSUMPTION PREVIEW (COMPACT) */}
-      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 space-y-2.5 shadow-xs">
-        <div className="flex items-center justify-between border-b border-[#16365B]/70 pb-2">
-          <div className="flex items-center gap-2">
-            <Gauge className="w-4 h-4 text-[#B9E5FF]" />
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-              Energy Consumption Readings (Simulated Preview)
+      {/* 3. OPTIONAL ENERGY CONSUMPTION PREVIEW (COMPACT TWO-COLUMN MOBILE GRID) */}
+      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-2.5 sm:p-3 space-y-2 shadow-xs">
+        <div className="flex items-center justify-between border-b border-[#16365B]/70 pb-1.5 text-xs">
+          <div className="flex items-center gap-1.5">
+            <Gauge className="w-3.5 h-3.5 text-[#B9E5FF]" />
+            <h3 className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
+              Consumption Preview (Simulated)
             </h3>
           </div>
 
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-slate-400 text-[11px]">Demo CT Readings:</span>
+          <div className="flex items-center gap-1.5 text-[10px]">
+            <span className="text-slate-400 hidden xs:inline">CT Readings:</span>
             <button
               onClick={() => setShowDemoCtReadings(!showDemoCtReadings)}
-              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors cursor-pointer border ${
+              className={`px-1.5 py-0.2 rounded text-[9px] font-semibold transition-colors cursor-pointer border ${
                 showDemoCtReadings
                   ? 'bg-[#16365B] text-[#B9E5FF] border-[#B9E5FF]/30'
                   : 'bg-[#071629] text-slate-400 border-[#16365B]'
@@ -278,88 +284,90 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {showDemoCtReadings ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-medium">Sample Demand</span>
-                <span className="text-[9px] font-mono text-slate-400">Illustrative</span>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+            {/* Box 1: Demand */}
+            <div className="p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
+              <div className="flex items-center justify-between text-[9px] text-slate-400">
+                <span className="font-medium">Demand</span>
+                <span className="font-mono">Demo</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-bold text-white">
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm sm:text-base font-bold text-white">
                   {isElectricityAvailable ? '~1.85' : '0.00'}
                 </span>
-                <span className="text-xs text-slate-400 font-semibold">kW (Demo)</span>
+                <span className="text-[10px] text-slate-400 font-semibold">kW</span>
               </div>
-              <span className="text-[10px] text-slate-400 block truncate">
-                {isElectricityAvailable ? 'Demo draw: ~8.0 A single-phase' : '0.00 A'}
+              <span className="text-[9px] text-slate-400 block truncate">
+                {isElectricityAvailable ? '~8.0 A draw (Demo)' : '0.00 A'}
               </span>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] space-y-0.5">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-slate-400 font-medium">Sample Daily Energy</span>
-                <span className="text-[9px] font-mono text-slate-400">Illustrative</span>
+            {/* Box 2: Daily Energy */}
+            <div className="p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
+              <div className="flex items-center justify-between text-[9px] text-slate-400">
+                <span className="font-medium">Today</span>
+                <span className="font-mono">Demo</span>
               </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-lg font-bold text-white">~14.6</span>
-                <span className="text-xs text-slate-400 font-semibold">kWh (Demo)</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-sm sm:text-base font-bold text-white">~14.6</span>
+                <span className="text-[10px] text-slate-400 font-semibold">kWh</span>
               </div>
-              <span className="text-[10px] text-slate-400 block truncate">
-                Aggregated daily consumption preview
+              <span className="text-[9px] text-slate-400 block truncate">
+                Simulated daily total
               </span>
             </div>
 
-            <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] flex flex-col justify-between space-y-1">
+            {/* Box 3: Analytics Link (Spans 2 columns on mobile, 1 col on desktop) */}
+            <div className="col-span-2 md:col-span-1 p-2 rounded bg-[#071629] border border-[#16365B] flex flex-row md:flex-col items-center md:items-start justify-between gap-1">
               <div>
-                <span className="text-[10px] text-slate-400 font-medium block">Analytics Workspace</span>
-                <p className="text-[10px] text-slate-300 leading-tight">
-                  Hourly load profiles & Band A/B/C utility tariff models.
+                <span className="text-[9px] text-slate-400 font-medium block">Analytics</span>
+                <p className="text-[9px] text-slate-300 truncate md:line-clamp-1">
+                  Load curves & tariffs
                 </p>
               </div>
               <button
-                onClick={() => onNavigate('energy-management')}
-                className="text-[11px] font-semibold text-[#B9E5FF] hover:underline flex items-center gap-1 self-start cursor-pointer pt-1"
+                onClick={() => onNavigate('energy-monitoring')}
+                className="text-[10px] font-semibold text-[#B9E5FF] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <span>Open Energy & Power</span>
-                <ArrowRight className="w-3 h-3" />
+                <ArrowRight className="w-2.5 h-2.5" />
               </button>
             </div>
           </div>
         ) : (
-          <div className="p-2 rounded bg-[#071629] text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Illustrative energy consumption preview is hidden.</span>
+          <div className="p-1.5 rounded bg-[#071629] text-[10px] text-slate-400 flex items-center justify-between">
+            <span>Simulated CT energy readings are hidden.</span>
             <button
               onClick={() => setShowDemoCtReadings(true)}
               className="text-[#B9E5FF] hover:underline font-semibold cursor-pointer"
             >
-              Show Demo Figures →
+              Show Readings →
             </button>
           </div>
         )}
       </section>
 
-      {/* 4. REMOTE POWER CONTROL SECTION (COMPACT & PROMINENT) */}
-      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3.5 sm:p-4 space-y-3 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-[#16365B]/70 pb-2.5">
-          <div className="flex items-center gap-2">
-            <Power className="w-4 h-4 text-[#B9E5FF]" />
-            <h3 className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider">
+      {/* 4. REMOTE POWER CONTROL SECTION (COMPACT & PROPORTIONAL) */}
+      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3 sm:p-3.5 space-y-2.5 shadow-xs">
+        <div className="flex items-center justify-between gap-2 border-b border-[#16365B]/70 pb-2">
+          <div className="flex items-center gap-1.5">
+            <Power className="w-3.5 h-3.5 text-[#B9E5FF]" />
+            <h3 className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
               Remote Electricity Supply Control (Prototype Simulation)
             </h3>
           </div>
-          <span className="text-[10px] text-amber-300 bg-amber-950/60 border border-amber-800/80 px-2 py-0.5 rounded self-start sm:self-auto font-mono">
-            Interactive Prototype Demo
+          <span className="text-[9px] text-amber-300 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.2 rounded font-mono shrink-0">
+            Interactive Demo
           </span>
         </div>
 
-        {/* State Display & Control Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 items-center">
-          {/* Status Breakdown (7 cols) */}
-          <div className="md:col-span-7 space-y-2">
-            <div className="p-3 rounded-lg bg-[#071629] border border-[#16365B] space-y-1.5">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400 text-[11px]">Simulated Contactor State:</span>
-                <span className={`font-mono text-[10px] font-bold px-2 py-0.5 rounded ${
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+          {/* Status Breakdown (7 cols on desktop) */}
+          <div className="md:col-span-7 space-y-1.5">
+            <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] space-y-1">
+              <div className="flex items-center justify-between text-[10px]">
+                <span className="text-slate-400">Simulated Contactor:</span>
+                <span className={`font-mono text-[9px] font-bold px-1.5 py-0.2 rounded ${
                   supplyState === 'ON' 
                     ? 'bg-emerald-950 text-emerald-300 border border-emerald-800'
                     : 'bg-rose-950 text-rose-300 border border-rose-800'
@@ -368,35 +376,33 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-baseline gap-2">
-                <span className="text-base sm:text-lg font-bold text-white">
-                  {supplyState === 'ON' ? 'Simulated Supply Online' : 'Simulated Supply Disconnected'}
-                </span>
+              <div className="text-sm sm:text-base font-bold text-white">
+                {supplyState === 'ON' ? 'Simulated Supply Online' : 'Simulated Supply Disconnected'}
               </div>
 
-              <p className="text-[11px] text-slate-300 leading-snug">
+              <p className="text-[10px] text-slate-300 leading-tight">
                 {supplyState === 'ON'
-                  ? 'Demonstration state: Authorized control simulates contactor CLOSED position in software sandbox (no physical contactor connected).'
-                  : 'Demonstration state: Authorized control simulates contactor OPEN position in software sandbox (no physical contactor connected).'}
+                  ? 'Contactor simulated in CLOSED state. Software sandbox preview (no physical contactor connected).'
+                  : 'Contactor simulated in OPEN state. Software sandbox preview (no physical contactor connected).'}
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-              <span>Hardware Link: <strong className="text-amber-300 font-mono text-[10px]">Simulated Response (No hardware connected)</strong></span>
-              <span>Physical Control: <strong className="text-slate-300">Manual Bypass Concept</strong></span>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
+              <span>Hardware Link: <strong className="text-amber-300 font-mono text-[9px]">Simulated (No hardware connected)</strong></span>
+              <span>Override: <strong className="text-slate-300">Manual Bypass Concept</strong></span>
             </div>
 
             {commandFeedback && (
-              <div className="p-2 rounded bg-[#071629] border border-[#B9E5FF]/40 text-xs text-[#B9E5FF] flex items-center gap-1.5">
-                <Info className="w-3.5 h-3.5 shrink-0" />
-                <span className="text-[11px]">{commandFeedback}</span>
+              <div className="p-1.5 rounded bg-[#071629] border border-[#B9E5FF]/40 text-[10px] text-[#B9E5FF] flex items-center gap-1.5">
+                <Info className="w-3 h-3 shrink-0" />
+                <span>{commandFeedback}</span>
               </div>
             )}
           </div>
 
-          {/* Action Button (5 cols) */}
-          <div className="md:col-span-5 flex flex-col justify-center space-y-2 p-3 bg-[#071629]/60 border border-[#16365B] rounded-xl">
-            <span className="text-[11px] font-medium text-slate-300 block">
+          {/* Action Button & Safety Reminder (5 cols on desktop) */}
+          <div className="md:col-span-5 flex flex-col justify-center space-y-1.5 p-2.5 bg-[#071629]/60 border border-[#16365B] rounded-lg">
+            <span className="text-[10px] font-medium text-slate-300 block">
               Authorized Remote Switching:
             </span>
 
@@ -404,7 +410,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => initiateSwitch('OFF')}
                 disabled={isCommandPending}
-                className="w-full py-2.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {isCommandPending && pendingTargetState === 'OFF' ? (
                   <>
@@ -422,7 +428,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => initiateSwitch('ON')}
                 disabled={isCommandPending}
-                className="w-full py-2.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {isCommandPending && pendingTargetState === 'ON' ? (
                   <>
@@ -438,62 +444,63 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             )}
 
-            <p className="text-[10px] text-slate-400 leading-tight">
-              Tests the customer safety confirmation flow before sensitive switching actions.
+            <p className="text-[9px] text-slate-400 leading-tight">
+              Safety confirmation required before switching simulation.
             </p>
           </div>
         </div>
 
-        {/* Compact Safety Policy Notice */}
-        <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] text-[11px] text-slate-300 flex items-start gap-2">
-          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-          <p className="leading-snug text-slate-400">
-            <strong className="text-slate-200">Critical Safety & Engineering Policy:</strong> Protection monitoring and control will become available when validated hardware is connected. Final electrical protection thresholds must be determined by qualified engineers. Essential safety functions remain independent of subscription status in the future design.
+        {/* Safety Policy Notice */}
+        <div className="p-2 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-300 flex items-start gap-1.5">
+          <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+          <p className="leading-tight text-slate-400">
+            <strong className="text-slate-300">Safety Policy:</strong> Physical electrical protection operates autonomously at the DIN-rail hardware level and remains independent of software subscription status in the future design.
           </p>
         </div>
       </section>
 
-      {/* 5. CUSTOMER WORKSPACES NAVIGATION DIRECTORY (COMPACT 5 SECTIONS) */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between text-xs">
-          <div className="flex items-center gap-1.5">
-            <Layers className="w-3.5 h-3.5 text-[#B9E5FF]" />
-            <h2 className="font-bold text-slate-300 uppercase tracking-wider text-[11px]">
+      {/* 5. CUSTOMER WORKSPACES (GENUINE 2-COLUMN MOBILE GRID, 5 COLUMNS ON DESKTOP) */}
+      <section className="space-y-1.5">
+        <div className="flex items-center justify-between text-xs px-0.5">
+          <div className="flex items-center gap-1">
+            <Layers className="w-3 h-3 text-[#B9E5FF]" />
+            <h2 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] sm:text-[11px]">
               Customer Workspaces
             </h2>
           </div>
-          <span className="text-[10px] text-slate-400">
-            5 Dedicated Sections
+          <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono">
+            5 Workspaces
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+        {/* Genuine 2-column mobile grid, 3-column tablet, 5-column desktop */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
           {customerSections.map((sec) => {
             const Icon = sec.icon;
             return (
               <button
                 key={sec.id}
                 onClick={() => onNavigate(sec.id)}
-                className="text-left bg-[#0B1B33] border border-[#16365B] rounded-xl p-3 flex flex-col justify-between hover:border-[#B9E5FF]/60 hover:bg-[#0E223F] transition-all cursor-pointer group shadow-xs"
+                className="text-left bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/60 hover:bg-[#0E223F] transition-all cursor-pointer group shadow-xs h-full"
               >
                 <div className="space-y-1.5">
-                  <div className="w-7 h-7 rounded-lg bg-[#071629] border border-[#16365B] text-[#B9E5FF] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Icon className="w-3.5 h-3.5" />
+                  <div className="w-6 h-6 rounded-md bg-[#071629] border border-[#16365B] text-[#B9E5FF] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Icon className="w-3 h-3" />
                   </div>
                   <div>
                     <h3 className="text-xs font-bold text-white group-hover:text-[#B9E5FF] transition-colors flex items-center justify-between">
                       <span className="truncate">{sec.title}</span>
-                      <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-[#B9E5FF] group-hover:translate-x-0.5 transition-all" />
+                      <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-[#B9E5FF] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
                     </h3>
-                    <p className="text-[10px] text-slate-300 leading-tight mt-0.5 line-clamp-2">
+                    <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 line-clamp-1">
                       {sec.desc}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-1.5 mt-1.5 border-t border-[#16365B]/60 text-[10px] font-semibold text-[#B9E5FF] flex items-center justify-between">
-                  <span>Open Section</span>
-                  <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                <div className="pt-1 mt-1 border-t border-[#16365B]/60 text-[9px] sm:text-[10px] font-semibold text-[#B9E5FF] flex items-center justify-between">
+                  <span>Open</span>
+                  <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </button>
             );
@@ -501,12 +508,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
       </section>
 
-      {/* FOOTER ARCHITECTURAL NOTE */}
-      <footer className="pt-2 border-t border-[#16365B]/60 text-[10px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1">
+      {/* FOOTER */}
+      <footer className="pt-2 border-t border-[#16365B]/60 text-[9px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1">
         <p>
           EnerGuru Platform • Building Electricity Intelligence Software Prototype
         </p>
-        <p className="text-[10px] text-slate-400">
+        <p className="text-[9px] text-slate-400">
           Smarter Energy. Stay Aware. Stay Prepared.
         </p>
       </footer>
@@ -514,8 +521,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       {/* POWER CONTROL CONFIRMATION MODAL */}
       {showConfirmModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-[#0B1B33] border border-[#16365B] rounded-2xl p-5 shadow-2xl space-y-3.5 text-xs">
-            <div className="flex items-center justify-between border-b border-[#16365B] pb-2.5">
+          <div className="w-full max-w-md bg-[#0B1B33] border border-[#16365B] rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3 text-xs">
+            <div className="flex items-center justify-between border-b border-[#16365B] pb-2">
               <div className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
                   targetAction === 'OFF' ? 'bg-rose-950 text-rose-400' : 'bg-emerald-950 text-emerald-400'
@@ -523,10 +530,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                   <Power className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">
+                  <h3 className="text-xs sm:text-sm font-bold text-white">
                     {targetAction === 'OFF' ? 'Confirm Power Disconnection' : 'Confirm Power Restoration'}
                   </h3>
-                  <span className="text-[10px] text-amber-300 font-mono">Prototype Simulation</span>
+                  <span className="text-[9px] text-amber-300 font-mono">Prototype Simulation</span>
                 </div>
               </div>
               <button
@@ -537,39 +544,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </button>
             </div>
 
-            <div className="space-y-2.5 text-slate-300">
+            <div className="space-y-2 text-slate-300">
               {targetAction === 'OFF' ? (
                 <>
-                  <p className="leading-relaxed">
+                  <p className="leading-snug text-[11px]">
                     You are testing the <strong>main electricity supply isolation</strong> flow for this building.
                   </p>
-                  <div className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-800/80 text-rose-200 space-y-1">
-                    <strong className="block text-rose-300 text-[11px]">Safety Precaution (Future Production Device):</strong>
-                    <span className="text-[11px] leading-snug">
+                  <div className="p-2 rounded bg-rose-950/40 border border-rose-800/80 text-rose-200 space-y-0.5">
+                    <strong className="block text-rose-300 text-[10px]">Safety Precaution (Future Production Device):</strong>
+                    <span className="text-[10px] leading-tight block">
                       In production, this command cuts power to all circuits. Verify that critical medical devices or essential equipment are not active.
                     </span>
                   </div>
                 </>
               ) : (
                 <>
-                  <p className="leading-relaxed">
+                  <p className="leading-snug text-[11px]">
                     You are testing the <strong>main electricity supply restoration</strong> flow for this building.
                   </p>
-                  <div className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-800/80 text-emerald-200 space-y-1">
-                    <strong className="block text-emerald-300 text-[11px]">Safety Precaution (Future Production Device):</strong>
-                    <span className="text-[11px] leading-snug">
+                  <div className="p-2 rounded bg-emerald-950/40 border border-emerald-800/80 text-emerald-200 space-y-0.5">
+                    <strong className="block text-emerald-300 text-[10px]">Safety Precaution (Future Production Device):</strong>
+                    <span className="text-[10px] leading-tight block">
                       In production, this command reconnects utility power. Verify that maintenance on building circuits is complete and appliances are safe.
                     </span>
                   </div>
                 </>
               )}
 
-              <div className="p-2 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-400">
-                <strong>Prototype Notice:</strong> This action simulates remote switching in this software demonstration. No physical building power is interrupted.
+              <div className="p-1.5 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-400">
+                <strong>Prototype Notice:</strong> Simulates remote switching in this software demonstration. No physical building power is interrupted.
               </div>
             </div>
 
-            <div className="pt-2 border-t border-[#16365B] flex items-center justify-end gap-2.5">
+            <div className="pt-2 border-t border-[#16365B] flex items-center justify-end gap-2">
               <button
                 onClick={() => setShowConfirmModal(false)}
                 className="px-3 py-1.5 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 text-xs font-semibold border border-[#16365B] cursor-pointer"
