@@ -397,6 +397,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         isOpen={pinModalOpen}
         mode={pinModalMode}
         userId={userId || ''}
+        userEmail={userEmail}
         onSuccess={async () => {
           await refreshPinStatus();
           setSuccessMessage(

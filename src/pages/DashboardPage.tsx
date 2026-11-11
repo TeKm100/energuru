@@ -751,6 +751,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         isOpen={pinModalOpen}
         mode={pinModalMode}
         userId={userId || ''}
+        userEmail={userEmail}
         actionDescription={
           pinModalMode === 'verify'
             ? targetAction === 'OFF'

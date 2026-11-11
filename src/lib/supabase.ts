@@ -11,9 +11,9 @@ function sanitizeUrl(rawUrl?: string): string {
   }
 }
 
-const rawUrl = (import.meta.env.VITE_SUPABASE_URL as string) || '';
+const rawUrl = ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_URL) as string) || '';
 export const supabaseUrl = sanitizeUrl(rawUrl);
-export const supabasePublishableKey = ((import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string) || '').trim();
+export const supabasePublishableKey = (((typeof import.meta !== 'undefined' && import.meta.env?.VITE_SUPABASE_PUBLISHABLE_KEY) as string) || '').trim();
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -48,8 +48,8 @@ export function getAuthRedirectUrl(subpath: string = ''): string {
   let baseOrigin = CANONICAL_PRODUCTION_ORIGIN;
 
   const envOverride = (
-    (import.meta.env.VITE_SITE_URL as string) ||
-    (import.meta.env.VITE_AUTH_REDIRECT_ORIGIN as string) ||
+    ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_SITE_URL) as string) ||
+    ((typeof import.meta !== 'undefined' && import.meta.env?.VITE_AUTH_REDIRECT_ORIGIN) as string) ||
     ''
   ).trim();
 
