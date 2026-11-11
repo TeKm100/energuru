@@ -69,7 +69,6 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
   onMarkAllNotificationsAsRead,
 }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [notificationDropdownOpen, setNotificationDropdownOpen] = useState(false);
   const [expandedNotificationId, setExpandedNotificationId] = useState<string | null>(null);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -77,7 +76,6 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
     'energy-management': true,
   });
 
-  const profileDropdownRef = useRef<HTMLDivElement>(null);
   const notificationDropdownRef = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.is_read).length;
@@ -148,14 +146,12 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
   const handleNav = (page: AuthPage) => {
     onNavigate(page);
     setMobileMenuOpen(false);
-    setProfileDropdownOpen(false);
     setNotificationDropdownOpen(false);
   };
 
   const handleSignOutClick = async () => {
     if (isSigningOut) return;
     setIsSigningOut(true);
-    setProfileDropdownOpen(false);
     setMobileMenuOpen(false);
     setNotificationDropdownOpen(false);
     try {
@@ -165,24 +161,21 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
     }
   };
 
-  // Close dropdowns when clicking outside
+  // Close notification dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       const target = e.target as Node;
-      if (profileDropdownRef.current && !profileDropdownRef.current.contains(target)) {
-        setProfileDropdownOpen(false);
-      }
       if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(target)) {
         setNotificationDropdownOpen(false);
       }
     };
-    if (profileDropdownOpen || notificationDropdownOpen) {
+    if (notificationDropdownOpen) {
       document.addEventListener('mousedown', handleClickOutside);
     }
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [profileDropdownOpen, notificationDropdownOpen]);
+  }, [notificationDropdownOpen]);
 
   // Lock body scroll when drawer is open
   useEffect(() => {
@@ -212,13 +205,12 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         if (mobileMenuOpen) setMobileMenuOpen(false);
-        if (profileDropdownOpen) setProfileDropdownOpen(false);
         if (notificationDropdownOpen) setNotificationDropdownOpen(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [mobileMenuOpen, profileDropdownOpen, notificationDropdownOpen]);
+  }, [mobileMenuOpen, notificationDropdownOpen]);
 
   const initial = (displayName || userEmail || 'U').charAt(0).toUpperCase();
 
@@ -303,84 +295,26 @@ export const AuthNavbar: React.FC<AuthNavbarProps> = ({
               <span>Get a Quote</span>
             </button>
 
-            {/* 1. User Account Menu with Ref for Outside Click */}
-            <div className="relative" ref={profileDropdownRef}>
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(!profileDropdownOpen);
-                  setNotificationDropdownOpen(false);
-                }}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-[#16365B]/60 transition-colors cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#B9E5FF]"
-                aria-label="User account menu"
-                aria-expanded={profileDropdownOpen}
-              >
-                <div className="w-8 h-8 rounded-full bg-[#16365B] border border-[#B9E5FF]/40 text-[#B9E5FF] font-bold text-xs flex items-center justify-center">
-                  {initial}
-                </div>
-                <div className="text-left text-xs max-w-[110px] truncate hidden lg:block">
-                  <span className="font-semibold text-white block truncate">{displayName}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
-              </button>
-
-              {/* Profile Dropdown Menu */}
-              {profileDropdownOpen && (
-                <div 
-                  className="absolute right-0 mt-2 w-56 bg-[#0B1B33] border border-[#16365B] rounded-lg shadow-2xl py-1.5 z-50 text-xs"
-                >
-                  <div className="px-3.5 py-2 border-b border-[#16365B]/80">
-                    <span className="text-slate-400 block text-[11px]">Signed in as</span>
-                    <span className="text-white font-semibold truncate block mt-0.5">{userEmail}</span>
-                  </div>
-                  
-                  <button
-                    onClick={() => handleNav('profile')}
-                    className="w-full text-left px-3.5 py-2.5 text-slate-200 hover:bg-[#16365B] hover:text-white flex items-center gap-2.5 transition-colors cursor-pointer"
-                  >
-                    <User className="w-4 h-4 text-slate-400" />
-                    <span>My Profile</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleNav('settings')}
-                    className="w-full text-left px-3.5 py-2.5 text-slate-200 hover:bg-[#16365B] hover:text-white flex items-center gap-2.5 transition-colors cursor-pointer"
-                  >
-                    <Settings className="w-4 h-4 text-slate-400" />
-                    <span>Account Settings</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleNav('plans')}
-                    className="w-full text-left px-3.5 py-2.5 text-slate-200 hover:bg-[#16365B] hover:text-white flex items-center gap-2.5 transition-colors cursor-pointer"
-                  >
-                    <CreditCard className="w-4 h-4 text-slate-400" />
-                    <span>Plans & Subscriptions</span>
-                  </button>
-
-                  <div className="border-t border-[#16365B]/80 my-1" />
-
-                  <button
-                    onClick={handleSignOutClick}
-                    disabled={isSigningOut}
-                    className="w-full text-left px-3.5 py-2.5 text-rose-300 hover:bg-rose-950/40 hover:text-rose-200 flex items-center gap-2.5 transition-colors cursor-pointer disabled:opacity-60"
-                  >
-                    {isSigningOut ? (
-                      <Loader2 className="w-4 h-4 animate-spin text-rose-400" />
-                    ) : (
-                      <LogOut className="w-4 h-4 text-rose-400" />
-                    )}
-                    <span>{isSigningOut ? 'Signing out...' : 'Sign Out'}</span>
-                  </button>
-                </div>
-              )}
-            </div>
+            {/* 1. User Avatar: Direct Navigation to My Profile */}
+            <button
+              onClick={() => handleNav('profile')}
+              className="flex items-center gap-2 p-1 sm:px-2 sm:py-1 rounded-lg hover:bg-[#16365B]/60 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#B9E5FF] group"
+              title="View My Profile"
+              aria-label="Navigate directly to My Profile"
+            >
+              <div className="w-8 h-8 rounded-full bg-[#16365B] border border-[#B9E5FF]/40 text-[#B9E5FF] font-bold text-xs flex items-center justify-center group-hover:border-[#B9E5FF] group-hover:scale-105 transition-transform shadow-xs">
+                {initial}
+              </div>
+              <div className="text-left text-xs max-w-[100px] truncate hidden xl:block">
+                <span className="font-semibold text-white block truncate group-hover:text-[#B9E5FF] transition-colors">{displayName}</span>
+              </div>
+            </button>
 
             {/* 2. Header Notification Icon (POSITIONED BETWEEN PROFILE AND MENU TOGGLE) */}
             <div className="relative" ref={notificationDropdownRef}>
               <button
                 onClick={() => {
                   setNotificationDropdownOpen(!notificationDropdownOpen);
-                  setProfileDropdownOpen(false);
                 }}
                 className="relative p-2 rounded-lg text-slate-300 hover:text-white bg-[#071629] hover:bg-[#16365B] border border-[#16365B] hover:border-[#B9E5FF]/40 focus:outline-none focus:ring-1 focus:ring-[#B9E5FF] cursor-pointer flex items-center justify-center transition-colors shadow-xs"
                 title="Notifications"

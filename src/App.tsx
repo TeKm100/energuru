@@ -453,6 +453,7 @@ export default function App() {
             <DashboardPage
               userProfile={userProfile}
               userEmail={userSession.user?.email || null}
+              userId={userSession.user?.id || null}
               onNavigate={(p) => handleNavigate(p)}
             />
           )}
@@ -588,6 +589,7 @@ export default function App() {
           isOpen={showOnboarding}
           userProfile={userProfile}
           userEmail={userSession.user?.email || null}
+          userId={userSession.user?.id || null}
           onComplete={handleCompleteOnboarding}
           onDismiss={handleDismissOnboarding}
           onNavigateToProfile={() => handleNavigate('profile')}

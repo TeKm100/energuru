@@ -8,25 +8,31 @@ import {
   Zap, 
   X, 
   ArrowRight, 
-  Loader2 
+  Loader2,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
 
 interface OnboardingModalProps {
   isOpen: boolean;
   userProfile: UserProfile | null;
   userEmail: string | null;
+  userId?: string | null;
   onComplete: (preferredNickname: string) => Promise<void>;
   onDismiss: () => void;
   onNavigateToProfile: () => void;
+  onOpenPinSetup?: () => void;
 }
 
 export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   isOpen,
   userProfile,
   userEmail,
+  userId,
   onComplete,
   onDismiss,
   onNavigateToProfile,
+  onOpenPinSetup,
 }) => {
   const [nickname, setNickname] = useState(userProfile?.nickname || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,6 +135,39 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <p className="text-[11px] text-slate-400">
                 Have generator kVA, battery amp-hours, and inverter ratings ready for upcoming inventory features.
               </p>
+            </div>
+
+            {/* Step 4: Security PIN Recommendation */}
+            <div className="p-4 bg-[#071629] border border-[#16365B] rounded-xl space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-white font-medium">
+                  <Lock className="w-4 h-4 text-[#B9E5FF]" />
+                  <span>4. Secure Your Power Controls</span>
+                </div>
+                <span className="text-[10px] uppercase font-mono px-2 py-0.5 rounded bg-[#16365B] text-[#B9E5FF] border border-[#B9E5FF]/30">
+                  Recommended
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Set a 4-digit Security PIN to authorize remote electricity supply switching commands.
+              </p>
+              <div className="pt-0.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    onDismiss();
+                    if (onOpenPinSetup) {
+                      onOpenPinSetup();
+                    } else {
+                      onNavigateToProfile();
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors cursor-pointer inline-flex items-center gap-1.5"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Set Security PIN in Profile</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -11,8 +11,12 @@ import {
   Loader2, 
   ArrowLeft,
   Copy,
-  Check
+  Check,
+  Lock,
+  ShieldCheck
 } from 'lucide-react';
+import { getSecurityPinStatus, SecurityPinStatus } from '../lib/securityPin';
+import { SecurityPinModal, PinModalMode } from '../components/SecurityPinModal';
 
 interface ProfilePageProps {
   userProfile: UserProfile | null;
@@ -35,6 +39,24 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
+  const [pinStatus, setPinStatus] = useState<SecurityPinStatus>({
+    hasPin: false,
+    isLocked: false,
+    attemptsRemaining: 3,
+  });
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<PinModalMode>('setup');
+
+  const refreshPinStatus = async () => {
+    if (userId) {
+      const status = await getSecurityPinStatus(userId);
+      setPinStatus(status);
+    }
+  };
+
+  useEffect(() => {
+    refreshPinStatus();
+  }, [userId]);
 
   // Sync state if profile changes
   useEffect(() => {
@@ -275,6 +297,77 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             </div>
           </div>
 
+          {/* Security PIN Section */}
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-5 space-y-3">
+            <div className="flex items-center justify-between border-b border-[#16365B] pb-2">
+              <div className="flex items-center gap-2">
+                <Lock className="w-4 h-4 text-[#B9E5FF]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                  Power Security PIN
+                </h3>
+              </div>
+              <span className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border ${
+                pinStatus.hasPin
+                  ? pinStatus.isLocked 
+                    ? 'bg-rose-950 text-rose-300 border-rose-800'
+                    : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                  : 'bg-amber-950 text-amber-300 border-amber-800'
+              }`}>
+                {pinStatus.hasPin ? (pinStatus.isLocked ? 'Locked Out' : 'Configured') : 'Not Set'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              A 4-digit Security PIN is required to authorize remote building electricity ON/OFF switching commands.
+            </p>
+
+            {pinStatus.isLocked && (
+              <div className="p-2 rounded bg-rose-950/60 border border-rose-800 text-[11px] text-rose-200">
+                Security lockout active after 3 failed verification attempts. Reset your PIN below to restore access.
+              </div>
+            )}
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              {!pinStatus.hasPin ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPinModalMode('setup');
+                    setPinModalOpen(true);
+                  }}
+                  className="px-3.5 py-1.5 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+                >
+                  Set Security PIN
+                </button>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPinModalMode('reset');
+                      setPinModalOpen(true);
+                    }}
+                    className="px-3.5 py-1.5 rounded-lg bg-[#16365B] hover:bg-[#B9E5FF] hover:text-[#071629] text-xs font-semibold text-white transition-colors cursor-pointer shadow-xs"
+                  >
+                    {pinStatus.isLocked ? 'Reset & Clear Lockout' : 'Change Security PIN'}
+                  </button>
+                  {!pinStatus.isLocked && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPinModalMode('reset');
+                        setPinModalOpen(true);
+                      }}
+                      className="text-xs text-slate-400 hover:text-white hover:underline cursor-pointer ml-1"
+                    >
+                      Forgot PIN?
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Technical Details Accordion (Subtle, Not Prominent) */}
           <div className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-5 space-y-2">
             <div className="flex items-center gap-2 text-slate-400 text-xs font-medium">
@@ -298,6 +391,22 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Security PIN Setup / Change / Reset Modal */}
+      <SecurityPinModal
+        isOpen={pinModalOpen}
+        mode={pinModalMode}
+        userId={userId || ''}
+        onSuccess={async () => {
+          await refreshPinStatus();
+          setSuccessMessage(
+            pinModalMode === 'reset'
+              ? 'Security PIN reset successfully. Lockout cleared.'
+              : 'Security PIN configured successfully.'
+          );
+        }}
+        onClose={() => setPinModalOpen(false)}
+      />
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AuthPage, UserProfile } from '../types';
 import { 
   Activity, 
@@ -18,29 +18,33 @@ import {
   Loader2,
   Check,
   X,
-  Zap,
-  Sliders
+  Lock,
+  KeyRound
 } from 'lucide-react';
+import { getSecurityPinStatus, SecurityPinStatus } from '../lib/securityPin';
+import { SecurityPinModal, PinModalMode } from '../components/SecurityPinModal';
 
 interface DashboardPageProps {
   userProfile: UserProfile | null;
   userEmail: string | null;
+  userId?: string | null;
   onNavigate: (page: AuthPage) => void;
 }
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({
   userProfile,
   userEmail,
+  userId,
   onNavigate,
 }) => {
   // Extract user's first name dynamically
   const getFirstName = () => {
+    if (userProfile?.nickname?.trim()) {
+      return userProfile.nickname.trim();
+    }
     if (userProfile?.full_name?.trim()) {
       const parts = userProfile.full_name.trim().split(' ');
       return parts[0];
-    }
-    if (userProfile?.nickname?.trim()) {
-      return userProfile.nickname.trim();
     }
     if (userEmail) {
       const username = userEmail.split('@')[0];
@@ -57,25 +61,68 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [pendingTargetState, setPendingTargetState] = useState<'ON' | 'OFF' | null>(null);
   const [commandFeedback, setCommandFeedback] = useState<string | null>(null);
 
-  // Switching confirmation modal state
+  // Switching confirmation & PIN authorization modal state
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [targetAction, setTargetAction] = useState<'ON' | 'OFF'>('OFF');
+
+  // Security PIN status & modal
+  const [pinStatus, setPinStatus] = useState<SecurityPinStatus>({
+    hasPin: false,
+    isLocked: false,
+    attemptsRemaining: 3,
+  });
+  const [pinModalOpen, setPinModalOpen] = useState(false);
+  const [pinModalMode, setPinModalMode] = useState<PinModalMode>('verify');
+  const [showNeedPinPrompt, setShowNeedPinPrompt] = useState(false);
+
+  // Refresh PIN status
+  const refreshPinStatus = async () => {
+    if (userId) {
+      const status = await getSecurityPinStatus(userId);
+      setPinStatus(status);
+    }
+  };
+
+  useEffect(() => {
+    refreshPinStatus();
+  }, [userId]);
 
   // Metering preview toggle
   const [showDemoCtReadings, setShowDemoCtReadings] = useState(true);
 
-  // Handle remote switching initiation with safety confirmation prompt
+  // Handle remote switching initiation
   const initiateSwitch = (action: 'ON' | 'OFF') => {
     setTargetAction(action);
+
+    // If locked out, advise reset
+    if (pinStatus.isLocked) {
+      setPinModalMode('reset');
+      setPinModalOpen(true);
+      return;
+    }
+
+    // If user has not set a Security PIN yet, prompt them to configure one
+    if (!pinStatus.hasPin) {
+      setShowNeedPinPrompt(true);
+      return;
+    }
+
+    // Otherwise show the safety confirmation dialog
     setShowConfirmModal(true);
   };
 
-  // Execute confirmed switching command in prototype sandbox
-  const confirmSwitch = () => {
+  // When user confirms safety warning, trigger PIN verification
+  const handleProceedToPin = () => {
     setShowConfirmModal(false);
+    setPinModalMode('verify');
+    setPinModalOpen(true);
+  };
+
+  // Execute confirmed switching command in prototype sandbox after successful PIN verification
+  const executeSwitchAfterPin = () => {
     setIsCommandPending(true);
     setPendingTargetState(targetAction);
-    setCommandFeedback('Simulating command dispatch in prototype sandbox...');
+    setCommandFeedback('PIN Authorized: Simulating command dispatch in prototype sandbox...');
 
     // Simulate 1.5s software response in prototype mode (no physical hardware connected)
     setTimeout(() => {
@@ -84,8 +131,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       setPendingTargetState(null);
       setCommandFeedback(
         targetAction === 'ON'
-          ? 'State Updated: Supply ON in demo sandbox. (No physical contactor connected).'
-          : 'State Updated: Supply ISOLATED in demo sandbox. (No physical contactor connected).'
+          ? 'Supply Restored: Contactor simulated in CLOSED state. (Software simulation only).'
+          : 'Supply Isolated: Contactor simulated in OPEN state. (Software simulation only).'
       );
 
       // Auto-clear feedback after 6 seconds
@@ -105,170 +152,198 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     {
       id: 'energy-management' as AuthPage,
       title: 'Energy & Power',
-      desc: 'Telemetry, load profiles & tariffs',
+      desc: 'Telemetry & tariffs',
       icon: Activity,
     },
     {
       id: 'devices-operations' as AuthPage,
-      title: 'Devices & Operations',
-      desc: 'Connector concepts & equipment logs',
+      title: 'Devices & Ops',
+      desc: 'Connectors & hardware',
       icon: Wrench,
     },
     {
       id: 'business-enterprise' as AuthPage,
-      title: 'Business & Enterprise',
-      desc: 'Advisory audits & quote requests',
+      title: 'Business & Quotes',
+      desc: 'Advisory & audits',
       icon: Briefcase,
     },
     {
       id: 'community-impact' as AuthPage,
-      title: 'Community & Impact',
-      desc: 'Rural clinic & school solar initiatives',
+      title: 'Community Impact',
+      desc: 'Clinic & school solar',
       icon: Users,
     },
     {
       id: 'account-plans' as AuthPage,
       title: 'Account & Plans',
-      desc: 'Profile credentials & subscriptions',
+      desc: 'Security PIN & profile',
       icon: User,
     },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-3.5 text-white">
+    <div className="max-w-7xl mx-auto px-3 sm:px-5 lg:px-6 py-2.5 sm:py-3.5 space-y-2.5 sm:space-y-3 text-white">
       
-      {/* 1. COMPACT WELCOME HEADER */}
+      {/* 1. RESTRAINED WELCOME HEADER (OPAY DENSITY) */}
       <div className="flex items-center justify-between gap-2 border-b border-[#16365B]/60 pb-2">
         <div className="flex items-center gap-2">
-          <h1 className="text-base sm:text-lg font-bold text-white tracking-tight">
+          <h1 className="text-sm sm:text-base md:text-lg font-bold text-white tracking-tight">
             Welcome, <span className="text-[#B9E5FF]">{userFirstName}</span>
           </h1>
           <span className="text-[9px] font-mono uppercase bg-amber-950/60 text-amber-300 border border-amber-800/80 px-1.5 py-0.2 rounded shrink-0">
             Prototype Demo
           </span>
         </div>
-        <div className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden xs:block sm:block">
-          Electricity Telemetry & Controls
+        
+        <div className="flex items-center gap-2">
+          {/* Quick PIN status pill */}
+          <button
+            onClick={() => onNavigate('profile')}
+            className={`inline-flex items-center gap-1 text-[9px] sm:text-[10px] font-mono uppercase px-2 py-0.5 rounded border transition-colors cursor-pointer ${
+              pinStatus.hasPin
+                ? pinStatus.isLocked
+                  ? 'bg-rose-950 text-rose-300 border-rose-800'
+                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                : 'bg-amber-950/80 text-amber-300 border-amber-800'
+            }`}
+            title="Manage 4-digit Power Security PIN in Profile"
+          >
+            <Lock className="w-2.5 h-2.5" />
+            <span>
+              {pinStatus.hasPin
+                ? pinStatus.isLocked
+                  ? 'PIN Locked'
+                  : 'PIN Active'
+                : 'Set PIN'}
+            </span>
+          </button>
+
+          <button
+            onClick={() => onNavigate('profile')}
+            className="text-[10px] sm:text-[11px] text-[#B9E5FF] hover:underline hidden xs:inline"
+          >
+            My Profile →
+          </button>
         </div>
       </div>
 
       {/* 2. FOUR PRIMARY ELECTRICITY INDICATORS (2 COLUMNS ON MOBILE, 4 ON DESKTOP) */}
-      <section className="space-y-1.5">
+      <section className="space-y-1">
         <div className="flex items-center justify-between text-xs px-0.5">
-          <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px] sm:text-[11px]">
-            Electricity Status Overview
+          <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
+            Electricity Overview
           </span>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono">
-            Simulated 2x2 Grid
+          <span className="text-[9px] text-slate-400 font-mono">
+            Simulated Feed
           </span>
         </div>
 
         {/* Responsive Grid: 2 columns on Mobile & Tablet, 4 columns on Desktop */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2">
           
           {/* Card 1: Electricity Supply Status */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-medium text-slate-300 truncate">1. Supply Status</span>
                 <span className="text-[9px] font-mono text-slate-400">Mains</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className={`text-xs sm:text-sm md:text-base font-bold tracking-tight truncate ${
+                <span className={`text-xs sm:text-sm font-bold tracking-tight truncate ${
                   isElectricityAvailable ? 'text-emerald-400' : 'text-rose-400'
                 }`}>
-                  {isElectricityAvailable ? 'Supply Active (Demo)' : 'Supply Inactive (Demo)'}
+                  {isElectricityAvailable ? 'Active (Demo)' : 'Isolated (Demo)'}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
+            <div className="flex items-center gap-1 text-[10px] text-slate-300 pt-1 mt-1 border-t border-[#16365B]/60 truncate">
               {isElectricityAvailable ? (
                 <>
-                  <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
-                  <span className="truncate">Circuits receiving power</span>
+                  <CheckCircle2 className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
+                  <span className="truncate">Circuits energized</span>
                 </>
               ) : (
                 <>
-                  <AlertTriangle className="w-3 h-3 text-rose-400 shrink-0" />
-                  <span className="truncate">Supply isolated in demo</span>
+                  <AlertTriangle className="w-2.5 h-2.5 text-rose-400 shrink-0" />
+                  <span className="truncate">Isolated in demo</span>
                 </>
               )}
             </div>
           </div>
 
-          {/* Card 2: Voltage Monitoring */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+          {/* Card 2: Voltage Reading */}
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-medium text-slate-300 truncate">2. Voltage Reading</span>
                 <span className="text-[9px] font-mono text-slate-400">Line</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs sm:text-sm md:text-base font-bold text-white tracking-tight">
+                <span className="text-xs sm:text-sm font-bold text-white tracking-tight">
                   {simulatedVoltage}
                 </span>
                 <span className="text-[10px] font-semibold text-slate-400">V AC (Demo)</span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
-              <Info className="w-3 h-3 text-[#B9E5FF] shrink-0" />
+            <div className="flex items-center gap-1 text-[10px] text-slate-300 pt-1 mt-1 border-t border-[#16365B]/60 truncate">
+              <Info className="w-2.5 h-2.5 text-[#B9E5FF] shrink-0" />
               <span className="truncate">
-                {isElectricityAvailable ? 'Nominal band ~210–240V' : '0V (Isolated line)'}
+                {isElectricityAvailable ? '~210–240V nominal' : '0V (Isolated line)'}
               </span>
             </div>
           </div>
 
           {/* Card 3: Detected Power Source */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-medium text-slate-300 truncate">3. Power Source</span>
                 <span className="text-[9px] font-mono text-slate-400">Feed</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs sm:text-sm md:text-base font-bold text-[#B9E5FF] tracking-tight truncate">
+                <span className="text-xs sm:text-sm font-bold text-[#B9E5FF] tracking-tight truncate">
                   {simulatedSource}
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
-              <Activity className="w-3 h-3 text-[#B9E5FF] shrink-0" />
-              <span className="truncate">Simulated grid feed profile</span>
+            <div className="flex items-center gap-1 text-[10px] text-slate-300 pt-1 mt-1 border-t border-[#16365B]/60 truncate">
+              <Activity className="w-2.5 h-2.5 text-[#B9E5FF] shrink-0" />
+              <span className="truncate">Simulated grid feed</span>
             </div>
           </div>
 
           {/* Card 4: Electrical Protection Status */}
-          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
-            <div className="space-y-1">
-              <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-400">
+          <div className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 flex flex-col justify-between hover:border-[#B9E5FF]/40 transition-colors shadow-xs">
+            <div className="space-y-0.5">
+              <div className="flex items-center justify-between text-[10px] text-slate-400">
                 <span className="font-medium text-slate-300 truncate">4. Protection</span>
                 <span className="text-[9px] font-mono text-amber-300">R&D</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-xs sm:text-sm md:text-base font-bold text-amber-300 tracking-tight truncate">
+                <span className="text-xs sm:text-sm font-bold text-amber-300 tracking-tight truncate">
                   Prototype Sandbox
                 </span>
               </div>
             </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-slate-300 pt-1.5 mt-1 border-t border-[#16365B]/60 truncate">
-              <ShieldCheck className="w-3 h-3 text-amber-400 shrink-0" />
-              <span className="truncate">Pending hardware validation</span>
+            <div className="flex items-center gap-1 text-[10px] text-slate-300 pt-1 mt-1 border-t border-[#16365B]/60 truncate">
+              <ShieldCheck className="w-2.5 h-2.5 text-amber-400 shrink-0" />
+              <span className="truncate">Pending hardware build</span>
             </div>
           </div>
         </div>
       </section>
 
       {/* 3. OPTIONAL ENERGY CONSUMPTION PREVIEW (COMPACT TWO-COLUMN MOBILE GRID) */}
-      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-2.5 sm:p-3 space-y-2 shadow-xs">
-        <div className="flex items-center justify-between border-b border-[#16365B]/70 pb-1.5 text-xs">
+      <section className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 space-y-1.5 shadow-xs">
+        <div className="flex items-center justify-between border-b border-[#16365B]/70 pb-1 text-xs">
           <div className="flex items-center gap-1.5">
-            <Gauge className="w-3.5 h-3.5 text-[#B9E5FF]" />
-            <h3 className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
+            <Gauge className="w-3 h-3 text-[#B9E5FF]" />
+            <h3 className="text-[10px] font-bold text-white uppercase tracking-wider">
               Consumption Preview (Simulated)
             </h3>
           </div>
 
-          <div className="flex items-center gap-1.5 text-[10px]">
+          <div className="flex items-center gap-1 text-[9px]">
             <span className="text-slate-400 hidden xs:inline">CT Readings:</span>
             <button
               onClick={() => setShowDemoCtReadings(!showDemoCtReadings)}
@@ -284,18 +359,18 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         </div>
 
         {showDemoCtReadings ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5 sm:gap-2">
             {/* Box 1: Demand */}
-            <div className="p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
+            <div className="p-1.5 sm:p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
               <div className="flex items-center justify-between text-[9px] text-slate-400">
                 <span className="font-medium">Demand</span>
                 <span className="font-mono">Demo</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-sm sm:text-base font-bold text-white">
+                <span className="text-xs sm:text-sm font-bold text-white">
                   {isElectricityAvailable ? '~1.85' : '0.00'}
                 </span>
-                <span className="text-[10px] text-slate-400 font-semibold">kW</span>
+                <span className="text-[9px] text-slate-400 font-semibold">kW</span>
               </div>
               <span className="text-[9px] text-slate-400 block truncate">
                 {isElectricityAvailable ? '~8.0 A draw (Demo)' : '0.00 A'}
@@ -303,14 +378,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
 
             {/* Box 2: Daily Energy */}
-            <div className="p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
+            <div className="p-1.5 sm:p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
               <div className="flex items-center justify-between text-[9px] text-slate-400">
                 <span className="font-medium">Today</span>
                 <span className="font-mono">Demo</span>
               </div>
               <div className="flex items-baseline gap-1">
-                <span className="text-sm sm:text-base font-bold text-white">~14.6</span>
-                <span className="text-[10px] text-slate-400 font-semibold">kWh</span>
+                <span className="text-xs sm:text-sm font-bold text-white">~14.6</span>
+                <span className="text-[9px] text-slate-400 font-semibold">kWh</span>
               </div>
               <span className="text-[9px] text-slate-400 block truncate">
                 Simulated daily total
@@ -318,7 +393,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
 
             {/* Box 3: Analytics Link (Spans 2 columns on mobile, 1 col on desktop) */}
-            <div className="col-span-2 md:col-span-1 p-2 rounded bg-[#071629] border border-[#16365B] flex flex-row md:flex-col items-center md:items-start justify-between gap-1">
+            <div className="col-span-2 md:col-span-1 p-1.5 sm:p-2 rounded bg-[#071629] border border-[#16365B] flex flex-row md:flex-col items-center md:items-start justify-between gap-1">
               <div>
                 <span className="text-[9px] text-slate-400 font-medium block">Analytics</span>
                 <p className="text-[9px] text-slate-300 truncate md:line-clamp-1">
@@ -327,7 +402,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               </div>
               <button
                 onClick={() => onNavigate('energy-monitoring')}
-                className="text-[10px] font-semibold text-[#B9E5FF] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
+                className="text-[9px] sm:text-[10px] font-semibold text-[#B9E5FF] hover:underline flex items-center gap-1 cursor-pointer shrink-0"
               >
                 <span>Open Energy & Power</span>
                 <ArrowRight className="w-2.5 h-2.5" />
@@ -335,7 +410,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             </div>
           </div>
         ) : (
-          <div className="p-1.5 rounded bg-[#071629] text-[10px] text-slate-400 flex items-center justify-between">
+          <div className="p-1.5 rounded bg-[#071629] text-[9px] text-slate-400 flex items-center justify-between">
             <span>Simulated CT energy readings are hidden.</span>
             <button
               onClick={() => setShowDemoCtReadings(true)}
@@ -347,24 +422,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         )}
       </section>
 
-      {/* 4. REMOTE POWER CONTROL SECTION (COMPACT & PROPORTIONAL) */}
-      <section className="bg-[#0B1B33] border border-[#16365B] rounded-xl p-3 sm:p-3.5 space-y-2.5 shadow-xs">
-        <div className="flex items-center justify-between gap-2 border-b border-[#16365B]/70 pb-2">
+      {/* 4. REMOTE POWER CONTROL SECTION (COMPACT & PIN-PROTECTED) */}
+      <section className="bg-[#0B1B33] border border-[#16365B] rounded-lg p-2.5 sm:p-3 space-y-2 shadow-xs">
+        <div className="flex items-center justify-between gap-2 border-b border-[#16365B]/70 pb-1.5">
           <div className="flex items-center gap-1.5">
             <Power className="w-3.5 h-3.5 text-[#B9E5FF]" />
             <h3 className="text-[10px] sm:text-xs font-bold text-white uppercase tracking-wider">
-              Remote Electricity Supply Control (Prototype Simulation)
+              Remote Electricity Supply Control
             </h3>
           </div>
-          <span className="text-[9px] text-amber-300 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.2 rounded font-mono shrink-0">
-            Interactive Demo
-          </span>
+          
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* PIN Requirement Badge */}
+            <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border flex items-center gap-1 ${
+              pinStatus.hasPin
+                ? pinStatus.isLocked
+                  ? 'bg-rose-950 text-rose-300 border-rose-800'
+                  : 'bg-emerald-950/80 text-emerald-300 border-emerald-800'
+                : 'bg-amber-950/80 text-amber-300 border-amber-800'
+            }`}>
+              <Lock className="w-2.5 h-2.5" />
+              <span>{pinStatus.hasPin ? (pinStatus.isLocked ? 'Locked' : 'PIN Required') : 'No PIN'}</span>
+            </span>
+
+            <span className="text-[9px] text-amber-300 bg-amber-950/60 border border-amber-800/80 px-1.5 py-0.2 rounded font-mono hidden xs:inline">
+              Demo Sandbox
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-2.5 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
           {/* Status Breakdown (7 cols on desktop) */}
-          <div className="md:col-span-7 space-y-1.5">
-            <div className="p-2.5 rounded-lg bg-[#071629] border border-[#16365B] space-y-1">
+          <div className="md:col-span-7 space-y-1">
+            <div className="p-2 rounded bg-[#071629] border border-[#16365B] space-y-0.5">
               <div className="flex items-center justify-between text-[10px]">
                 <span className="text-slate-400">Simulated Contactor:</span>
                 <span className={`font-mono text-[9px] font-bold px-1.5 py-0.2 rounded ${
@@ -376,41 +466,42 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </span>
               </div>
 
-              <div className="text-sm sm:text-base font-bold text-white">
+              <div className="text-xs sm:text-sm font-bold text-white">
                 {supplyState === 'ON' ? 'Simulated Supply Online' : 'Simulated Supply Disconnected'}
               </div>
 
-              <p className="text-[10px] text-slate-300 leading-tight">
+              <p className="text-[9px] text-slate-300 leading-tight">
                 {supplyState === 'ON'
                   ? 'Contactor simulated in CLOSED state. Software sandbox preview (no physical contactor connected).'
                   : 'Contactor simulated in OPEN state. Software sandbox preview (no physical contactor connected).'}
               </p>
             </div>
 
-            <div className="flex items-center justify-between text-[10px] text-slate-400 px-0.5">
-              <span>Hardware Link: <strong className="text-amber-300 font-mono text-[9px]">Simulated (No hardware connected)</strong></span>
-              <span>Override: <strong className="text-slate-300">Manual Bypass Concept</strong></span>
+            <div className="flex items-center justify-between text-[9px] text-slate-400 px-0.5">
+              <span>Hardware Link: <strong className="text-amber-300 font-mono">Simulated (No hardware connected)</strong></span>
+              <span>Authorization: <strong className="text-slate-300">4-Digit PIN</strong></span>
             </div>
 
             {commandFeedback && (
-              <div className="p-1.5 rounded bg-[#071629] border border-[#B9E5FF]/40 text-[10px] text-[#B9E5FF] flex items-center gap-1.5">
-                <Info className="w-3 h-3 shrink-0" />
+              <div className="p-1 rounded bg-[#071629] border border-[#B9E5FF]/40 text-[9px] text-[#B9E5FF] flex items-center gap-1.5">
+                <Info className="w-2.5 h-2.5 shrink-0" />
                 <span>{commandFeedback}</span>
               </div>
             )}
           </div>
 
           {/* Action Button & Safety Reminder (5 cols on desktop) */}
-          <div className="md:col-span-5 flex flex-col justify-center space-y-1.5 p-2.5 bg-[#071629]/60 border border-[#16365B] rounded-lg">
-            <span className="text-[10px] font-medium text-slate-300 block">
-              Authorized Remote Switching:
-            </span>
+          <div className="md:col-span-5 flex flex-col justify-center space-y-1 p-2 bg-[#071629]/60 border border-[#16365B] rounded-lg">
+            <div className="flex items-center justify-between text-[9px] text-slate-300">
+              <span className="font-medium">Authorized Switching:</span>
+              <span className="font-mono text-slate-400 text-[8px]">PIN Verified</span>
+            </div>
 
             {supplyState === 'ON' ? (
               <button
                 onClick={() => initiateSwitch('OFF')}
                 disabled={isCommandPending}
-                className="w-full py-2 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[40px] py-1.5 px-3 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {isCommandPending && pendingTargetState === 'OFF' ? (
                   <>
@@ -428,7 +519,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <button
                 onClick={() => initiateSwitch('ON')}
                 disabled={isCommandPending}
-                className="w-full py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
+                className="w-full min-h-[40px] py-1.5 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-50"
               >
                 {isCommandPending && pendingTargetState === 'ON' ? (
                   <>
@@ -445,13 +536,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
             )}
 
             <p className="text-[9px] text-slate-400 leading-tight">
-              Safety confirmation required before switching simulation.
+              Requires 4-digit Security PIN authorization before execution.
             </p>
           </div>
         </div>
 
         {/* Safety Policy Notice */}
-        <div className="p-2 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-300 flex items-start gap-1.5">
+        <div className="p-1.5 rounded bg-[#071629] border border-[#16365B] text-[9px] text-slate-300 flex items-start gap-1">
           <ShieldCheck className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
           <p className="leading-tight text-slate-400">
             <strong className="text-slate-300">Safety Policy:</strong> Physical electrical protection operates autonomously at the DIN-rail hardware level and remains independent of software subscription status in the future design.
@@ -460,47 +551,47 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </section>
 
       {/* 5. CUSTOMER WORKSPACES (GENUINE 2-COLUMN MOBILE GRID, 5 COLUMNS ON DESKTOP) */}
-      <section className="space-y-1.5">
+      <section className="space-y-1">
         <div className="flex items-center justify-between text-xs px-0.5">
           <div className="flex items-center gap-1">
             <Layers className="w-3 h-3 text-[#B9E5FF]" />
-            <h2 className="font-bold text-slate-300 uppercase tracking-wider text-[10px] sm:text-[11px]">
+            <h2 className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
               Customer Workspaces
             </h2>
           </div>
-          <span className="text-[9px] sm:text-[10px] text-slate-400 font-mono">
+          <span className="text-[9px] text-slate-400 font-mono">
             5 Workspaces
           </span>
         </div>
 
         {/* Genuine 2-column mobile grid, 3-column tablet, 5-column desktop */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1.5 sm:gap-2">
           {customerSections.map((sec) => {
             const Icon = sec.icon;
             return (
               <button
                 key={sec.id}
                 onClick={() => onNavigate(sec.id)}
-                className="text-left bg-[#0B1B33] border border-[#16365B] rounded-lg sm:rounded-xl p-2.5 sm:p-3 flex flex-col justify-between hover:border-[#B9E5FF]/60 hover:bg-[#0E223F] transition-all cursor-pointer group shadow-xs h-full"
+                className="text-left bg-[#0B1B33] border border-[#16365B] rounded-lg p-2 sm:p-2.5 flex flex-col justify-between hover:border-[#B9E5FF]/60 hover:bg-[#0E223F] transition-all cursor-pointer group shadow-xs h-full"
               >
-                <div className="space-y-1.5">
-                  <div className="w-6 h-6 rounded-md bg-[#071629] border border-[#16365B] text-[#B9E5FF] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Icon className="w-3 h-3" />
+                <div className="space-y-1">
+                  <div className="w-5 h-5 rounded-md bg-[#071629] border border-[#16365B] text-[#B9E5FF] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                    <Icon className="w-2.5 h-2.5" />
                   </div>
                   <div>
-                    <h3 className="text-xs font-bold text-white group-hover:text-[#B9E5FF] transition-colors flex items-center justify-between">
+                    <h3 className="text-[11px] sm:text-xs font-bold text-white group-hover:text-[#B9E5FF] transition-colors flex items-center justify-between">
                       <span className="truncate">{sec.title}</span>
-                      <ChevronRight className="w-3 h-3 text-slate-500 group-hover:text-[#B9E5FF] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
+                      <ChevronRight className="w-2.5 h-2.5 text-slate-500 group-hover:text-[#B9E5FF] group-hover:translate-x-0.5 transition-all shrink-0 ml-1" />
                     </h3>
-                    <p className="text-[9px] sm:text-[10px] text-slate-400 leading-tight mt-0.5 line-clamp-1">
+                    <p className="text-[9px] text-slate-400 leading-tight mt-0.5 line-clamp-1">
                       {sec.desc}
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-1 mt-1 border-t border-[#16365B]/60 text-[9px] sm:text-[10px] font-semibold text-[#B9E5FF] flex items-center justify-between">
+                <div className="pt-1 mt-1 border-t border-[#16365B]/60 text-[9px] font-semibold text-[#B9E5FF] flex items-center justify-between">
                   <span>Open</span>
-                  <ArrowRight className="w-2.5 h-2.5 group-hover:translate-x-0.5 transition-transform" />
+                  <ArrowRight className="w-2 h-2 group-hover:translate-x-0.5 transition-transform" />
                 </div>
               </button>
             );
@@ -509,19 +600,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       </section>
 
       {/* FOOTER */}
-      <footer className="pt-2 border-t border-[#16365B]/60 text-[9px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1">
+      <footer className="pt-1.5 border-t border-[#16365B]/60 text-[8px] sm:text-[9px] text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-1">
         <p>
           EnerGuru Platform • Building Electricity Intelligence Software Prototype
         </p>
-        <p className="text-[9px] text-slate-400">
+        <p>
           Smarter Energy. Stay Aware. Stay Prepared.
         </p>
       </footer>
 
-      {/* POWER CONTROL CONFIRMATION MODAL */}
+      {/* SAFETY CONFIRMATION MODAL (STEP 1 BEFORE PIN VERIFICATION) */}
       {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="w-full max-w-md bg-[#0B1B33] border border-[#16365B] rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3 text-xs">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-3 sm:p-4 animate-in fade-in">
+          <div className="w-full max-w-sm sm:max-w-md bg-[#0B1B33] border border-[#16365B] rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3 text-xs">
             <div className="flex items-center justify-between border-b border-[#16365B] pb-2">
               <div className="flex items-center gap-2">
                 <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${
@@ -571,8 +662,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 </>
               )}
 
-              <div className="p-1.5 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-400">
-                <strong>Prototype Notice:</strong> Simulates remote switching in this software demonstration. No physical building power is interrupted.
+              <div className="p-1.5 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-400 flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5 text-[#B9E5FF] shrink-0" />
+                <span>You will be prompted for your 4-digit Security PIN to authorize this command.</span>
               </div>
             </div>
 
@@ -584,19 +676,96 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                 Cancel
               </button>
               <button
-                onClick={confirmSwitch}
-                className={`px-3 py-1.5 rounded-lg text-white text-xs font-bold shadow-xs cursor-pointer ${
+                onClick={handleProceedToPin}
+                className={`px-3.5 py-1.5 rounded-lg text-white text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 ${
                   targetAction === 'OFF'
                     ? 'bg-rose-600 hover:bg-rose-500'
                     : 'bg-emerald-600 hover:bg-emerald-500'
                 }`}
               >
-                {targetAction === 'OFF' ? 'Simulate Disconnection' : 'Simulate Restoration'}
+                <KeyRound className="w-3.5 h-3.5" />
+                <span>Enter PIN to Authorize</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
+      {/* PROMPT TO CONFIGURE PIN IF NOT SET */}
+      {showNeedPinPrompt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-xs p-4 animate-in fade-in">
+          <div className="w-full max-w-sm bg-[#0B1B33] border border-[#16365B] rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-2xl space-y-3 text-xs">
+            <div className="flex items-center justify-between border-b border-[#16365B] pb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-lg bg-amber-950 text-amber-400 flex items-center justify-center">
+                  <Lock className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <h3 className="text-xs sm:text-sm font-bold text-white">Security PIN Required</h3>
+                  <span className="text-[9px] font-mono text-slate-400">Power Switching Protection</span>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowNeedPinPrompt(false)}
+                className="text-slate-400 hover:text-white p-1 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-[11px] text-slate-300 leading-snug">
+              To prevent accidental or unauthorized electrical cut-offs, EnerGuru requires a 4-digit Security PIN before sending remote switching commands.
+            </p>
+
+            <div className="p-2 rounded bg-[#071629] border border-[#16365B] text-[10px] text-slate-400">
+              You can set your Security PIN now in seconds.
+            </div>
+
+            <div className="pt-2 border-t border-[#16365B] flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setShowNeedPinPrompt(false)}
+                className="px-3 py-1.5 rounded-lg bg-[#071629] hover:bg-[#16365B] text-slate-300 text-xs font-semibold border border-[#16365B] cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowNeedPinPrompt(false);
+                  setPinModalMode('setup');
+                  setPinModalOpen(true);
+                }}
+                className="px-3.5 py-1.5 rounded-lg bg-[#B9E5FF] text-[#071629] hover:bg-white text-xs font-bold transition-colors cursor-pointer shadow-xs flex items-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Set Security PIN Now</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SECURITY PIN VERIFICATION & MANAGEMENT MODAL */}
+      <SecurityPinModal
+        isOpen={pinModalOpen}
+        mode={pinModalMode}
+        userId={userId || ''}
+        actionDescription={
+          pinModalMode === 'verify'
+            ? targetAction === 'OFF'
+              ? 'Isolate Main Electricity Supply'
+              : 'Restore Main Electricity Supply'
+            : undefined
+        }
+        onSuccess={async () => {
+          await refreshPinStatus();
+          if (pinModalMode === 'verify') {
+            executeSwitchAfterPin();
+          }
+        }}
+        onClose={() => setPinModalOpen(false)}
+      />
     </div>
   );
 };
